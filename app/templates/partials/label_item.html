@@ -1,0 +1,36 @@
+<div class="label-item" id="label-{{ label.id }}" x-data="{ editing: false }">
+  <div x-show="!editing" class="label-row">
+    <button class="label-filter-item"
+            @click="$dispatch('filter-label', '{{ label.id }}')"
+            x-on:click="window.dispatchEvent(new CustomEvent('filterLabel', {detail: '{{ label.id }}'}))">
+      <span class="label-title">{{ label.title }}</span>
+      {% if label.description %}
+      <span class="label-desc">{{ label.description }}</span>
+      {% endif %}
+    </button>
+    <div class="label-actions">
+      <button class="icon-btn-xs" @click="editing = true" title="Edit">✏️</button>
+      <button class="icon-btn-xs icon-btn-danger"
+              hx-delete="/labels/{{ label.id }}"
+              hx-target="#label-{{ label.id }}"
+              hx-swap="outerHTML"
+              hx-confirm="Delete label '{{ label.title }}'? Notes will be unlinked."
+              title="Delete"
+              hx-on::after-request="htmx.trigger(document.body, 'labelChanged')">🗑️</button>
+    </div>
+  </div>
+
+  <form x-show="editing"
+        hx-put="/labels/{{ label.id }}"
+        hx-target="#label-{{ label.id }}"
+        hx-swap="outerHTML"
+        hx-on::after-request="editing = false; htmx.trigger(document.body, 'labelChanged')"
+        class="label-form label-edit-form">
+    <input type="text" name="title" value="{{ label.title }}" required />
+    <input type="text" name="description" value="{{ label.description }}" placeholder="Short description" />
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-sm">Save</button>
+      <button type="button" class="btn btn-ghost btn-sm" @click="editing = false">Cancel</button>
+    </div>
+  </form>
+</div>

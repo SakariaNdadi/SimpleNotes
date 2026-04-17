@@ -1,0 +1,44 @@
+<div class="note-card" id="note-{{ note.id }}" x-data="{ expanded: false, editing: false }">
+  <div class="note-card-header">
+    {% if note.label %}
+    <span class="note-label-badge">{{ note.label.title }}</span>
+    {% endif %}
+    <div class="note-card-actions">
+      {% if note.is_edited %}
+      <span class="note-edited-badge" title="Edited {{ note.updated_at.strftime('%b %d, %Y %H:%M') }}">Edited</span>
+      {% endif %}
+      <button class="icon-btn" title="Summarize with AI"
+              hx-post="/ai/summary/{{ note.id }}"
+              hx-target="#summary-{{ note.id }}"
+              hx-swap="innerHTML"
+              hx-indicator="#sum-spin-{{ note.id }}">✨</button>
+      <span id="sum-spin-{{ note.id }}" class="htmx-indicator spinner-sm"></span>
+      <button class="icon-btn" @click="editing = !editing" title="Edit">✏️</button>
+      <button class="icon-btn icon-btn-danger"
+              hx-delete="/notes/{{ note.id }}"
+              hx-target="#note-{{ note.id }}"
+              hx-swap="outerHTML"
+              hx-confirm="Delete this note?"
+              title="Delete">🗑️</button>
+    </div>
+  </div>
+
+  <!-- Read view -->
+  <div x-show="!editing">
+    <p class="note-body" :class="{ 'note-body-clamped': !expanded }"
+       @click="expanded = !expanded">{{ note.description }}</p>
+    <div class="note-meta">
+      <span>{{ note.created_at.strftime('%b %d, %Y · %H:%M') }}</span>
+    </div>
+    <div id="summary-{{ note.id }}" class="note-summary"></div>
+  </div>
+
+  <!-- Edit form (loaded lazily) -->
+  <div x-show="editing"
+       hx-get="/notes/{{ note.id }}/edit"
+       hx-trigger="x-show[editing] once"
+       hx-target="this"
+       hx-swap="innerHTML">
+    <div class="feed-loading">Loading…</div>
+  </div>
+</div>

@@ -1,0 +1,68 @@
+<div class="llm-settings" x-data="{ showForm: false }">
+  {% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
+
+  <h4>Active LLM configurations</h4>
+  {% if configs %}
+  {% for cfg in configs %}
+  <div class="llm-config-item {% if cfg.is_active %}llm-config-active{% endif %}">
+    <div class="llm-config-info">
+      <strong>{{ cfg.provider_name }}</strong> · {{ cfg.model_name }}
+      {% if cfg.base_url %}<span class="muted">({{ cfg.base_url }})</span>{% endif %}
+      {% if cfg.is_active %}<span class="badge badge-active">Active</span>{% endif %}
+    </div>
+    <div class="llm-config-actions">
+      {% if not cfg.is_active %}
+      <button class="btn btn-sm btn-ghost"
+              hx-post="/settings/llm/{{ cfg.id }}/activate"
+              hx-target=".llm-settings"
+              hx-swap="outerHTML">Set active</button>
+      {% endif %}
+      <button class="btn btn-sm btn-ghost btn-danger"
+              hx-delete="/settings/llm/{{ cfg.id }}"
+              hx-target=".llm-settings"
+              hx-swap="outerHTML"
+              hx-confirm="Remove this LLM config?">Remove</button>
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <p class="muted">No LLM configured yet.</p>
+  {% endif %}
+
+  <button class="btn btn-primary btn-sm" @click="showForm = !showForm">+ Add LLM</button>
+
+  <form x-show="showForm"
+        hx-post="/settings/llm"
+        hx-target=".llm-settings"
+        hx-swap="outerHTML"
+        hx-on::after-request="showForm = false"
+        class="llm-form">
+
+    <div class="field">
+      <label>Provider name</label>
+      <input type="text" name="provider_name" placeholder="openai / anthropic / ollama / custom" required />
+    </div>
+    <div class="field">
+      <label>Model name</label>
+      <input type="text" name="model_name" placeholder="gpt-4o / claude-3-5-sonnet / gemma3 / deepseek-r1" required />
+    </div>
+    <div class="field">
+      <label>Base URL <span class="muted">(for Ollama/self-hosted, e.g. http://localhost:11434)</span></label>
+      <input type="url" name="base_url" placeholder="Leave empty for cloud providers" />
+    </div>
+    <div class="field">
+      <label>API Key <span class="muted">(encrypted at rest, leave empty for Ollama)</span></label>
+      <input type="password" name="api_key" placeholder="sk-…" />
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save & activate</button>
+      <button type="button" class="btn btn-ghost" @click="showForm = false">Cancel</button>
+    </div>
+  </form>
+
+  <div class="llm-hint">
+    <strong>Supported providers:</strong>
+    OpenAI, Anthropic, Google Gemini, Cohere, Mistral, Ollama (Gemma, DeepSeek, Llama), any OpenAI-compatible endpoint.
+    See <a href="/docs/llm-config" target="_blank">docs</a> for setup guides.
+  </div>
+</div>

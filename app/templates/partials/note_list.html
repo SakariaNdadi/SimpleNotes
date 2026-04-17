@@ -1,0 +1,22 @@
+{% for note in notes %}
+{% include "partials/note_card.html" %}
+{% endfor %}
+
+{% if has_more %}
+<div class="load-more-sentinel"
+     hx-get="/notes?offset={{ next_offset }}&label_id={{ label_id }}"
+     hx-trigger="revealed"
+     hx-swap="outerHTML">
+  <div class="feed-loading">Loading more…</div>
+</div>
+{% endif %}
+
+{% if not notes %}
+<div class="feed-empty">
+  {% if is_search %}
+  <p>No notes matched your search.</p>
+  {% else %}
+  <p>No notes yet. Create your first note!</p>
+  {% endif %}
+</div>
+{% endif %}

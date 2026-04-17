@@ -1,0 +1,146 @@
+"""
+AI service using LiteLLM.
+
+Supports:
+- Cloud providers: OpenAI, Anthropic, Gemini, etc. (via api_key)
+- Self-hosted: Ollama, llama.cpp, vLLM, DeepSeek, Gemma (via base_url)
+- Any OpenAI-compatible endpoint (base_url + model)
+
+If LiteLLM doesn't support a custom endpoint, falls back to direct httpx call.
+"""
+
+from __future__ import annotations
+
+import json
+
+import httpx
+import litellm
+from sqlalchemy.orm import Session
+
+from app.auth.utils import decrypt_value
+from app.models import UserLLMConfig
+
+
+def _get_active_config(db: Session, user_id: str) -> UserLLMConfig | None:
+    return (
+        db.query(UserLLMConfig)
+        .filter(UserLLMConfig.user_id == user_id, UserLLMConfig.is_active)
+        .order_by(UserLLMConfig.created_at.desc())
+        .first()
+    )
+
+
+def _build_litellm_kwargs(config: UserLLMConfig) -> dict:
+    kwargs: dict = {"model": config.model_name}
+    if config.api_key_encrypted:
+        kwargs["api_key"] = decrypt_value(config.api_key_encrypted)
+    if config.base_url:
+        kwargs["base_url"] = config.base_url
+    return kwargs
+
+
+async def _fallback_openai_compat(
+    base_url: str, model: str, api_key: str | None, messages: list
+) -> str:
+    """Direct httpx call for OpenAI-compatible endpoints LiteLLM may not handle."""
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    payload = {"model": model, "messages": messages}
+    async with httpx.AsyncClient(timeout=60) as client:
+        resp = await client.post(
+            f"{base_url.rstrip('/')}/v1/chat/completions", json=payload, headers=headers
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"]
+
+
+async def complete(db: Session, user_id: str, messages: list[dict]) -> str:
+    config = _get_active_config(db, user_id)
+    if not config:
+        return "No LLM configured. Go to Settings → AI to add one."
+
+    kwargs = _build_litellm_kwargs(config)
+    try:
+        response = await litellm.acompletion(messages=messages, **kwargs)
+        return response.choices[0].message.content or ""
+    except Exception as litellm_err:
+        # Fallback: direct httpx for custom endpoints
+        if config.base_url:
+            try:
+                api_key = (
+                    decrypt_value(config.api_key_encrypted)
+                    if config.api_key_encrypted
+                    else None
+                )
+                return await _fallback_openai_compat(
+                    config.base_url, config.model_name, api_key, messages
+                )
+            except Exception:
+                pass
+        return f"AI error: {litellm_err}"
+
+
+async def summarize_note(db: Session, user_id: str, note_text: str) -> str:
+    messages = [
+        {
+            "role": "system",
+            "content": "Summarize the following note in 2-3 concise sentences.",
+        },
+        {"role": "user", "content": note_text},
+    ]
+    return await complete(db, user_id, messages)
+
+
+async def detect_tasks(db: Session, user_id: str, note_text: str) -> list[dict]:
+    """
+    Returns list of detected tasks/reminders:
+    [{"title": "...", "description": "...", "type": "task|reminder", "datetime": "ISO or null"}]
+    """
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "Extract any tasks, todos, or reminders from the note. "
+                'Return JSON array: [{"title": str, "description": str, "type": "task|reminder", "datetime": "ISO8601 or null"}]. '
+                "Return empty array [] if none found. Return ONLY valid JSON."
+            ),
+        },
+        {"role": "user", "content": note_text},
+    ]
+    raw = await complete(db, user_id, messages)
+    try:
+        start = raw.find("[")
+        end = raw.rfind("]") + 1
+        return json.loads(raw[start:end]) if start != -1 else []
+    except (json.JSONDecodeError, ValueError):
+        return []
+
+
+async def semantic_search(db: Session, user_id: str, query: str, notes: list) -> list:
+    """
+    Dev fallback: rank notes by keyword relevance using LLM.
+    Prod should use pgvector embeddings instead.
+    """
+    if not notes:
+        return []
+
+    numbered = "\n".join(f"{i + 1}. {n.description[:200]}" for i, n in enumerate(notes))
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "Given the search query and a numbered list of notes, return the numbers of the most relevant notes "
+                "in order of relevance as a JSON array of integers. Max 10 results. Return ONLY JSON array."
+            ),
+        },
+        {"role": "user", "content": f"Query: {query}\n\nNotes:\n{numbered}"},
+    ]
+    raw = await complete(db, user_id, messages)
+    try:
+        start = raw.find("[")
+        end = raw.rfind("]") + 1
+        indices = json.loads(raw[start:end]) if start != -1 else []
+        return [notes[i - 1] for i in indices if 1 <= i <= len(notes)]
+    except (json.JSONDecodeError, ValueError, IndexError):
+        return notes[:10]

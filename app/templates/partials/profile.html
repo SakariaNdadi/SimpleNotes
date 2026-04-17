@@ -1,0 +1,37 @@
+<div class="profile-settings">
+  {% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
+  {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+  <h4>Profile</h4>
+  <form hx-post="/profile"
+        hx-target=".profile-settings"
+        hx-swap="outerHTML"
+        class="profile-form">
+    <div class="field">
+      <label>Username</label>
+      <input type="text" name="username" value="{{ user.username }}" required />
+      {% if errors and errors.username %}<span class="field-error">{{ errors.username }}</span>{% endif %}
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" name="email" value="{{ user.email }}" required />
+      {% if errors and errors.email %}<span class="field-error">{{ errors.email }}</span>{% endif %}
+    </div>
+    <hr />
+    <h4>Change password <span class="muted">(leave blank to keep current)</span></h4>
+    <div class="field">
+      <label>New password</label>
+      <input type="password" name="new_password" placeholder="New password" />
+      {% if errors and errors.new_password %}<span class="field-error">{{ errors.new_password }}</span>{% endif %}
+    </div>
+    <div class="field">
+      <label>Confirm new password</label>
+      <input type="password" name="confirm_password" placeholder="Confirm new password" />
+    </div>
+    <div class="field">
+      <label>Current password <span class="muted">(required to save changes)</span></label>
+      <input type="password" name="current_password" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Save changes</button>
+  </form>
+</div>

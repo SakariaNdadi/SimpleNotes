@@ -1,0 +1,39 @@
+<div class="task-prompt" x-data="{ dismissed: false }" x-show="!dismissed">
+  <div class="task-prompt-header">
+    <span>🤖 AI detected {{ tasks|length }} task{{ 's' if tasks|length != 1 else '' }}</span>
+    <button class="icon-btn-xs" @click="dismissed = true">✕</button>
+  </div>
+
+  {% for task in tasks %}
+  <div class="task-item" x-data="{ created: false, creating: false }">
+    <div class="task-info">
+      <strong>{{ task.title }}</strong>
+      {% if task.description %}<p>{{ task.description }}</p>{% endif %}
+      {% if task.datetime %}<span class="task-dt">📅 {{ task.datetime }}</span>{% endif %}
+    </div>
+
+    <div x-show="!created" class="task-actions">
+      {% for provider in providers %}
+      <form hx-post="/integrations/{{ provider }}/create-task"
+            hx-target=".task-item:nth-child({{ loop.parent.loop.index + 1 }}) .task-result"
+            hx-swap="innerHTML"
+            hx-on::after-request="creating = false; created = true"
+            @submit="creating = true">
+        <input type="hidden" name="title" value="{{ task.title }}" />
+        <input type="hidden" name="description" value="{{ task.description or '' }}" />
+        <input type="hidden" name="dt" value="{{ task.datetime or '' }}" />
+        <input type="hidden" name="task_type" value="{{ task.type }}" />
+        <button type="submit" class="btn btn-sm btn-outline" :disabled="creating">
+          {% if provider == 'google' %}📅 Google{% elif provider == 'microsoft' %}📅 Microsoft{% endif %}
+        </button>
+      </form>
+      {% endfor %}
+      {% if not providers %}
+      <span class="muted">Connect a calendar in Settings → Integrations to add tasks.</span>
+      {% endif %}
+      <button class="btn btn-ghost btn-sm" @click="created = true">Skip</button>
+    </div>
+    <div class="task-result" x-show="created"></div>
+  </div>
+  {% endfor %}
+</div>

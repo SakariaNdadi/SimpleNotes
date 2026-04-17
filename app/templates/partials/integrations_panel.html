@@ -1,0 +1,57 @@
+<div class="integrations-panel">
+  <h4>Calendar &amp; Task Integrations</h4>
+  <p class="muted">Connect accounts to create tasks and calendar events directly from your notes when AI detects them.</p>
+
+  <!-- Google -->
+  <div class="integration-item">
+    <div class="integration-info">
+      <span class="integration-icon">🔵</span>
+      <div>
+        <strong>Google Calendar &amp; Tasks</strong>
+        {% if 'google' in connected_providers %}
+        <span class="badge badge-active">Connected</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="integration-actions">
+      {% if 'google' in connected_providers %}
+      <button class="btn btn-sm btn-ghost btn-danger"
+              hx-delete="/integrations/google/disconnect"
+              hx-target=".integrations-panel"
+              hx-swap="outerHTML"
+              hx-confirm="Disconnect Google?">Disconnect</button>
+      {% else %}
+      <a href="/integrations/google/oauth" class="btn btn-sm btn-primary">Connect</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Microsoft -->
+  <div class="integration-item">
+    <div class="integration-info">
+      <span class="integration-icon">🔷</span>
+      <div>
+        <strong>Microsoft Calendar &amp; To Do</strong>
+        {% if 'microsoft' in connected_providers %}
+        <span class="badge badge-active">Connected</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="integration-actions">
+      {% if 'microsoft' in connected_providers %}
+      <button class="btn btn-sm btn-ghost btn-danger"
+              hx-delete="/integrations/microsoft/disconnect"
+              hx-target=".integrations-panel"
+              hx-swap="outerHTML"
+              hx-confirm="Disconnect Microsoft?">Disconnect</button>
+      {% else %}
+      <a href="/integrations/microsoft/oauth" class="btn btn-sm btn-primary">Connect</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <p class="muted integration-hint">
+    See <a href="https://github.com/your-repo/docs/integrations.md" target="_blank">setup guide</a>
+    for OAuth credentials setup.
+  </p>
+</div>

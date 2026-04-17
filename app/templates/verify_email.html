@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Verify Email – Notes{% endblock %}
+{% block body %}
+<div class="auth-page">
+  <div class="auth-card">
+    <h1 class="auth-logo">📝 Notes</h1>
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% else %}
+    <div class="alert alert-success">{{ success }}</div>
+    {% endif %}
+    <div class="auth-links"><a href="/login">Sign in →</a></div>
+  </div>
+</div>
+{% endblock %}

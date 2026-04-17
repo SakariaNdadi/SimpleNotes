@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Notes{% endblock %}
+{% block body %}
+<div class="app" x-data="appState()" x-init="init()">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" :class="{ 'sidebar-open': sidebarOpen }">
+    <div class="sidebar-header">
+      <span class="sidebar-logo">📝 Notes</span>
+      <button class="icon-btn" @click="sidebarOpen = false" title="Close">✕</button>
+    </div>
+
+    <!-- New Note Button -->
+    <button class="btn btn-primary sidebar-new-btn" @click="openNewNote()">+ New Note</button>
+
+    <!-- Labels Section -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-header" @click="labelsExpanded = !labelsExpanded">
+        <span>Labels</span>
+        <span x-text="labelsExpanded ? '▾' : '▸'"></span>
+      </div>
+      <div x-show="labelsExpanded">
+        <!-- Label filter -->
+        <button class="label-filter-item" :class="{'active': activeLabelId === ''}" @click="filterByLabel('')">
+          All notes
+        </button>
+        <div id="label-list"
+             hx-get="/labels"
+             hx-trigger="load, labelChanged from:body"
+             hx-target="#label-list"
+             hx-swap="innerHTML">
+        </div>
+        <!-- Add label form -->
+        <div x-data="{ open: false }">
+          <button class="btn btn-ghost btn-sm" @click="open = !open">+ Add label</button>
+          <form x-show="open"
+                hx-post="/labels"
+                hx-target="#label-list"
+                hx-swap="innerHTML"
+                hx-on::after-request="open = false; htmx.trigger(document.body, 'labelChanged')"
+                class="label-form">
+            <input type="text" name="title" placeholder="Label name" required />
+            <input type="text" name="description" placeholder="Short description (optional)" />
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary btn-sm">Add</button>
+              <button type="button" class="btn btn-ghost btn-sm" @click="open = false">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Section -->
+    <div class="sidebar-section sidebar-bottom">
+      <button class="sidebar-nav-item" @click="settingsPanel = 'llm'">🤖 AI / LLM</button>
+      <button class="sidebar-nav-item" @click="settingsPanel = 'integrations'">📅 Integrations</button>
+      <button class="sidebar-nav-item" @click="settingsPanel = 'profile'">👤 {{ user.username }}</button>
+      <form method="post" action="/logout">
+        <button type="submit" class="sidebar-nav-item sidebar-nav-logout">Sign out</button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Main area -->
+  <main class="main">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <button class="icon-btn" @click="sidebarOpen = !sidebarOpen" title="Menu">☰</button>
+      <div class="search-bar">
+        <form hx-post="/ai/search"
+              hx-target="#note-feed"
+              hx-swap="innerHTML"
+              hx-indicator="#search-spinner"
+              @submit="searchActive = true">
+          <input type="text" name="query" placeholder="Search with AI…" x-model="searchQuery"
+                 @keydown.escape="clearSearch()" />
+          <button type="submit" class="icon-btn" title="Search">🔍</button>
+          <span id="search-spinner" class="htmx-indicator spinner"></span>
+        </form>
+        <button x-show="searchActive" class="btn btn-ghost btn-sm" @click="clearSearch()">✕ Clear</button>
+      </div>
+      <button class="icon-btn mobile-new-btn" @click="openNewNote()" title="New note">✏️</button>
+    </header>
+
+    <!-- New note composer -->
+    <div class="composer-wrap" x-show="noteFormOpen" x-transition>
+      <form class="composer"
+            hx-post="/notes"
+            hx-target="#note-feed"
+            hx-swap="afterbegin"
+            hx-on::after-request="closeNewNote(); htmx.trigger(document.body, 'noteCreated')"
+            @keydown.ctrl.enter="$el.requestSubmit()"
+            @keydown.meta.enter="$el.requestSubmit()">
+        <textarea name="description" placeholder="Write a note… (Ctrl+Enter to save)"
+                  x-ref="noteTextarea" rows="4" required></textarea>
+        <div class="composer-footer">
+          <select name="label_id">
+            <option value="">No label</option>
+            {% for label in labels %}
+            <option value="{{ label.id }}">{{ label.title }}</option>
+            {% endfor %}
+          </select>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn btn-ghost" @click="closeNewNote()">Cancel</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Note feed -->
+    <div class="feed-wrap">
+      <div id="note-feed"
+           hx-get="/notes?offset=0&label_id={{ active_label_id or '' }}"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div class="feed-loading">Loading…</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Settings Panel (slide-over) -->
+  <div class="settings-overlay" x-show="settingsPanel" @click.self="settingsPanel = null" x-transition></div>
+  <aside class="settings-panel" x-show="settingsPanel" x-transition>
+    <div class="settings-panel-header">
+      <h3 x-text="settingsPanelTitle()"></h3>
+      <button class="icon-btn" @click="settingsPanel = null">✕</button>
+    </div>
+    <div class="settings-panel-body"
+         x-effect="if (settingsPanel) loadSettingsPanel(settingsPanel)">
+      <div id="settings-content" class="settings-content"></div>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+function appState() {
+  return {
+    sidebarOpen: window.innerWidth >= 768,
+    labelsExpanded: true,
+    noteFormOpen: false,
+    searchQuery: '',
+    searchActive: false,
+    activeLabelId: '',
+    settingsPanel: null,
+
+    init() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('connected')) {
+        this.settingsPanel = 'integrations';
+      }
+    },
+
+    openNewNote() {
+      this.noteFormOpen = true;
+      this.$nextTick(() => this.$refs.noteTextarea?.focus());
+    },
+
+    closeNewNote() {
+      this.noteFormOpen = false;
+    },
+
+    clearSearch() {
+      this.searchActive = false;
+      this.searchQuery = '';
+      htmx.ajax('GET', '/notes?offset=0&label_id=' + this.activeLabelId, {target: '#note-feed', swap: 'innerHTML'});
+    },
+
+    filterByLabel(labelId) {
+      this.activeLabelId = labelId;
+      this.searchActive = false;
+      htmx.ajax('GET', '/notes?offset=0&label_id=' + labelId, {target: '#note-feed', swap: 'innerHTML'});
+    },
+
+    settingsPanelTitle() {
+      return { llm: '🤖 AI / LLM Settings', integrations: '📅 Integrations', profile: '👤 Profile' }[this.settingsPanel] || '';
+    },
+
+    loadSettingsPanel(panel) {
+      const urls = {
+        llm: '/settings/llm',
+        integrations: '/integrations/panel',
+        profile: '/profile',
+      };
+      if (urls[panel]) {
+        htmx.ajax('GET', urls[panel], {target: '#settings-content', swap: 'innerHTML'});
+      }
+    },
+  };
+}
+</script>
+{% endblock %}

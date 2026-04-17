@@ -1,0 +1,24 @@
+<form hx-put="/notes/{{ note.id }}"
+      hx-target="#note-{{ note.id }}"
+      hx-swap="outerHTML"
+      class="note-edit-form"
+      @keydown.ctrl.enter="$el.requestSubmit()"
+      @keydown.meta.enter="$el.requestSubmit()">
+  <textarea name="description" rows="5" required autofocus>{{ note.description }}</textarea>
+  <div class="composer-footer">
+    <select name="label_id">
+      <option value="">No label</option>
+      {% for label in labels %}
+      <option value="{{ label.id }}" {% if note.label_id == label.id %}selected{% endif %}>{{ label.title }}</option>
+      {% endfor %}
+    </select>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-sm">Save</button>
+      <button type="button" class="btn btn-ghost btn-sm"
+              hx-get="/notes?offset=0"
+              hx-target="#note-{{ note.id }}"
+              hx-swap="outerHTML"
+              onclick="this.closest('.note-card').__x.$data.editing=false">Cancel</button>
+    </div>
+  </div>
+</form>
