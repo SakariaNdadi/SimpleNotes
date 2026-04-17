@@ -1,37 +1,40 @@
-<div class="profile-settings">
-  {% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
-  {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+<div class="profile-settings space-y-4">
+  {% if success %}<div class="bg-success text-sm px-4 py-3 rounded-xl">{{ success }}</div>{% endif %}
+  {% if error %}<div class="bg-error text-sm px-4 py-3 rounded-xl">{{ error }}</div>{% endif %}
 
-  <h4>Profile</h4>
-  <form hx-post="/profile"
-        hx-target=".profile-settings"
-        hx-swap="outerHTML"
-        class="profile-form">
-    <div class="field">
-      <label>Username</label>
-      <input type="text" name="username" value="{{ user.username }}" required />
-      {% if errors and errors.username %}<span class="field-error">{{ errors.username }}</span>{% endif %}
+  <form hx-post="/profile" hx-target=".profile-settings" hx-swap="outerHTML" class="space-y-3">
+    <div>
+      <label class="block text-xs font-medium text-secondary mb-1">Username</label>
+      <input type="text" name="username" value="{{ user.username }}" required
+             class="input-base w-full px-3 py-2 rounded-lg border text-sm {% if errors and errors.username %}border-red-400{% endif %}" />
+      {% if errors and errors.username %}<p class="text-xs text-red-500 mt-1">{{ errors.username }}</p>{% endif %}
     </div>
-    <div class="field">
-      <label>Email</label>
-      <input type="email" name="email" value="{{ user.email }}" required />
-      {% if errors and errors.email %}<span class="field-error">{{ errors.email }}</span>{% endif %}
+    <div>
+      <label class="block text-xs font-medium text-secondary mb-1">Email</label>
+      <input type="email" name="email" value="{{ user.email }}" required
+             class="input-base w-full px-3 py-2 rounded-lg border text-sm {% if errors and errors.email %}border-red-400{% endif %}" />
+      {% if errors and errors.email %}<p class="text-xs text-red-500 mt-1">{{ errors.email }}</p>{% endif %}
     </div>
-    <hr />
-    <h4>Change password <span class="muted">(leave blank to keep current)</span></h4>
-    <div class="field">
-      <label>New password</label>
-      <input type="password" name="new_password" placeholder="New password" />
-      {% if errors and errors.new_password %}<span class="field-error">{{ errors.new_password }}</span>{% endif %}
+
+    <div class="border-t border-base pt-3">
+      <p class="text-xs font-medium text-secondary mb-2">Change password <span class="text-muted font-normal">(leave blank to keep current)</span></p>
+      <div class="space-y-2">
+        <input type="password" name="new_password" placeholder="New password"
+               class="input-base w-full px-3 py-2 rounded-lg border text-sm {% if errors and errors.new_password %}border-red-400{% endif %}" />
+        {% if errors and errors.new_password %}<p class="text-xs text-red-500">{{ errors.new_password }}</p>{% endif %}
+        <input type="password" name="confirm_password" placeholder="Confirm new password"
+               class="input-base w-full px-3 py-2 rounded-lg border text-sm" />
+      </div>
     </div>
-    <div class="field">
-      <label>Confirm new password</label>
-      <input type="password" name="confirm_password" placeholder="Confirm new password" />
+
+    <div>
+      <label class="block text-xs font-medium text-secondary mb-1">
+        Current password <span class="text-muted font-normal">(required to save)</span>
+      </label>
+      <input type="password" name="current_password" required
+             class="input-base w-full px-3 py-2 rounded-lg border text-sm" />
     </div>
-    <div class="field">
-      <label>Current password <span class="muted">(required to save changes)</span></label>
-      <input type="password" name="current_password" required />
-    </div>
-    <button type="submit" class="btn btn-primary">Save changes</button>
+
+    <button type="submit" class="btn-accent w-full py-2.5 rounded-xl text-sm font-semibold">Save changes</button>
   </form>
 </div>

@@ -1,7 +1,8 @@
-<div class="ai-summary">
-  <span class="ai-summary-label">✨ Summary</span>
-  <p>{{ summary }}</p>
-  <button class="btn btn-ghost btn-xs"
-          hx-get="#"
-          onclick="this.closest('.ai-summary').remove(); return false;">Dismiss</button>
+<div class="mt-3 p-3 bg-ai-surface border rounded-xl text-sm text-secondary">
+  <div class="flex items-center justify-between mb-1.5">
+    <span class="text-xs font-semibold text-accent flex items-center gap-1">✨ AI Summary</span>
+    <button onclick="this.closest('.mt-3').remove()"
+            class="text-muted hover:text-primary text-xs px-1 rounded transition-colors">Dismiss</button>
+  </div>
+  <p class="leading-relaxed">{{ summary }}</p>
 </div>

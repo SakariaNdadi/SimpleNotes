@@ -1,24 +1,28 @@
-<form hx-put="/notes/{{ note.id }}"
-      hx-target="#note-{{ note.id }}"
-      hx-swap="outerHTML"
-      class="note-edit-form"
-      @keydown.ctrl.enter="$el.requestSubmit()"
-      @keydown.meta.enter="$el.requestSubmit()">
-  <textarea name="description" rows="5" required autofocus>{{ note.description }}</textarea>
-  <div class="composer-footer">
-    <select name="label_id">
-      <option value="">No label</option>
-      {% for label in labels %}
-      <option value="{{ label.id }}" {% if note.label_id == label.id %}selected{% endif %}>{{ label.title }}</option>
-      {% endfor %}
-    </select>
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary btn-sm">Save</button>
-      <button type="button" class="btn btn-ghost btn-sm"
-              hx-get="/notes?offset=0"
-              hx-target="#note-{{ note.id }}"
-              hx-swap="outerHTML"
-              onclick="this.closest('.note-card').__x.$data.editing=false">Cancel</button>
+<div class="bg-surface rounded-xl border-2 border-[color:var(--accent)] p-4 shadow-sm" id="note-{{ note.id }}">
+  <form hx-put="/notes/{{ note.id }}"
+        hx-target="#note-{{ note.id }}"
+        hx-swap="outerHTML"
+        @keydown.ctrl.enter="$el.requestSubmit()"
+        @keydown.meta.enter="$el.requestSubmit()">
+    <textarea name="description" rows="5" required autofocus
+              class="input-base w-full text-[15px] leading-relaxed px-0 py-0 border-0 bg-transparent resize-none focus:ring-0 mb-3">{{ note.description }}</textarea>
+    <div class="flex items-center justify-between border-t border-base pt-3">
+      <select name="label_id"
+              class="input-base text-sm px-2 py-1 rounded-md border bg-surface2">
+        <option value="">No label</option>
+        {% for label in labels %}
+        <option value="{{ label.id }}" {% if note.label_id == label.id %}selected{% endif %}>{{ label.title }}</option>
+        {% endfor %}
+      </select>
+      <div class="flex items-center gap-2">
+        <button type="button"
+                hx-get="/notes/{{ note.id }}"
+                hx-target="#note-{{ note.id }}"
+                hx-swap="outerHTML"
+                class="text-sm text-secondary hover:text-primary px-3 py-1.5 rounded-lg transition-colors">Cancel</button>
+        <button type="submit"
+                class="btn-accent text-sm font-medium px-4 py-1.5 rounded-lg">Save</button>
+      </div>
     </div>
-  </div>
-</form>
+  </form>
+</div>

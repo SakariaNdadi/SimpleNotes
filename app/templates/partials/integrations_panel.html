@@ -1,57 +1,54 @@
-<div class="integrations-panel">
-  <h4>Calendar &amp; Task Integrations</h4>
-  <p class="muted">Connect accounts to create tasks and calendar events directly from your notes when AI detects them.</p>
+<div class="integrations-panel space-y-3">
+  <p class="text-sm text-muted">Connect accounts so the AI can create tasks and events directly from your notes.</p>
 
   <!-- Google -->
-  <div class="integration-item">
-    <div class="integration-info">
-      <span class="integration-icon">🔵</span>
+  <div class="flex items-center justify-between p-3.5 rounded-xl border border-base bg-surface2">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm">🔵</div>
       <div>
-        <strong>Google Calendar &amp; Tasks</strong>
-        {% if 'google' in connected_providers %}
-        <span class="badge badge-active">Connected</span>
-        {% endif %}
+        <p class="text-sm font-medium text-primary">Google</p>
+        <p class="text-xs text-muted">Calendar &amp; Tasks</p>
       </div>
-    </div>
-    <div class="integration-actions">
       {% if 'google' in connected_providers %}
-      <button class="btn btn-sm btn-ghost btn-danger"
-              hx-delete="/integrations/google/disconnect"
-              hx-target=".integrations-panel"
-              hx-swap="outerHTML"
-              hx-confirm="Disconnect Google?">Disconnect</button>
-      {% else %}
-      <a href="/integrations/google/oauth" class="btn btn-sm btn-primary">Connect</a>
+      <span class="bg-tag text-xs px-2 py-0.5 rounded-full font-medium">Connected</span>
       {% endif %}
     </div>
+    {% if 'google' in connected_providers %}
+    <button hx-delete="/integrations/google/disconnect"
+            hx-target=".integrations-panel" hx-swap="outerHTML"
+            hx-confirm="Disconnect Google?"
+            class="text-xs text-red-500 hover:underline px-2">Disconnect</button>
+    {% else %}
+    <a href="/integrations/google/oauth"
+       class="btn-accent text-xs font-medium px-3 py-1.5 rounded-lg">Connect</a>
+    {% endif %}
   </div>
 
   <!-- Microsoft -->
-  <div class="integration-item">
-    <div class="integration-info">
-      <span class="integration-icon">🔷</span>
+  <div class="flex items-center justify-between p-3.5 rounded-xl border border-base bg-surface2">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-sm">🔷</div>
       <div>
-        <strong>Microsoft Calendar &amp; To Do</strong>
-        {% if 'microsoft' in connected_providers %}
-        <span class="badge badge-active">Connected</span>
-        {% endif %}
+        <p class="text-sm font-medium text-primary">Microsoft</p>
+        <p class="text-xs text-muted">Calendar &amp; To Do</p>
       </div>
-    </div>
-    <div class="integration-actions">
       {% if 'microsoft' in connected_providers %}
-      <button class="btn btn-sm btn-ghost btn-danger"
-              hx-delete="/integrations/microsoft/disconnect"
-              hx-target=".integrations-panel"
-              hx-swap="outerHTML"
-              hx-confirm="Disconnect Microsoft?">Disconnect</button>
-      {% else %}
-      <a href="/integrations/microsoft/oauth" class="btn btn-sm btn-primary">Connect</a>
+      <span class="bg-tag text-xs px-2 py-0.5 rounded-full font-medium">Connected</span>
       {% endif %}
     </div>
+    {% if 'microsoft' in connected_providers %}
+    <button hx-delete="/integrations/microsoft/disconnect"
+            hx-target=".integrations-panel" hx-swap="outerHTML"
+            hx-confirm="Disconnect Microsoft?"
+            class="text-xs text-red-500 hover:underline px-2">Disconnect</button>
+    {% else %}
+    <a href="/integrations/microsoft/oauth"
+       class="btn-accent text-xs font-medium px-3 py-1.5 rounded-lg">Connect</a>
+    {% endif %}
   </div>
 
-  <p class="muted integration-hint">
-    See <a href="https://github.com/your-repo/docs/integrations.md" target="_blank">setup guide</a>
-    for OAuth credentials setup.
+  <p class="text-xs text-muted">
+    Need OAuth credentials?
+    <a href="/docs/integrations" class="text-accent hover:underline" target="_blank">Setup guide →</a>
   </p>
 </div>

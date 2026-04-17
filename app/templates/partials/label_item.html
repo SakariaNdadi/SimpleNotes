@@ -1,36 +1,49 @@
-<div class="label-item" id="label-{{ label.id }}" x-data="{ editing: false }">
-  <div x-show="!editing" class="label-row">
-    <button class="label-filter-item"
-            @click="$dispatch('filter-label', '{{ label.id }}')"
-            x-on:click="window.dispatchEvent(new CustomEvent('filterLabel', {detail: '{{ label.id }}'}))">
-      <span class="label-title">{{ label.title }}</span>
+<div class="group" id="label-{{ label.id }}" x-data="{ editing: false }">
+
+  <!-- Normal view -->
+  <div x-show="!editing" class="flex items-center px-3 py-0.5">
+    <button class="flex-1 text-left text-sm py-1.5 rounded-lg flex flex-col gap-0.5 hover:bg-surface2 px-2 transition-colors"
+            :class="$store.app && $store.app.activeLabelId === '{{ label.id }}' ? 'label-active' : 'text-secondary'"
+            hx-get="/notes?label_id={{ label.id }}"
+            hx-target="#note-feed"
+            hx-swap="innerHTML"
+            @click="if($store.app) $store.app.activeLabelId = '{{ label.id }}'">
+      <span class="font-medium leading-tight">{{ label.title }}</span>
       {% if label.description %}
-      <span class="label-desc">{{ label.description }}</span>
+      <span class="text-[11px] text-muted leading-tight">{{ label.description }}</span>
       {% endif %}
     </button>
-    <div class="label-actions">
-      <button class="icon-btn-xs" @click="editing = true" title="Edit">✏️</button>
-      <button class="icon-btn-xs icon-btn-danger"
-              hx-delete="/labels/{{ label.id }}"
+    <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+      <button @click="editing = true"
+              class="p-1 text-muted hover:text-primary rounded transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+      </button>
+      <button hx-delete="/labels/{{ label.id }}"
               hx-target="#label-{{ label.id }}"
               hx-swap="outerHTML"
-              hx-confirm="Delete label '{{ label.title }}'? Notes will be unlinked."
-              title="Delete"
-              hx-on::after-request="htmx.trigger(document.body, 'labelChanged')">🗑️</button>
+              hx-confirm="Delete label '{{ label.title }}'?"
+              hx-on::after-request="htmx.trigger(document.body, 'labelChanged')"
+              class="p-1 text-muted hover:text-red-500 rounded transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      </button>
     </div>
   </div>
 
-  <form x-show="editing"
+  <!-- Edit form -->
+  <form x-show="editing" x-transition
         hx-put="/labels/{{ label.id }}"
         hx-target="#label-{{ label.id }}"
         hx-swap="outerHTML"
         hx-on::after-request="editing = false; htmx.trigger(document.body, 'labelChanged')"
-        class="label-form label-edit-form">
-    <input type="text" name="title" value="{{ label.title }}" required />
-    <input type="text" name="description" value="{{ label.description }}" placeholder="Short description" />
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary btn-sm">Save</button>
-      <button type="button" class="btn btn-ghost btn-sm" @click="editing = false">Cancel</button>
+        class="px-3 py-2 space-y-1.5">
+    <input type="text" name="title" value="{{ label.title }}" required
+           class="input-base w-full text-sm px-3 py-1.5 rounded-md border" autofocus />
+    <input type="text" name="description" value="{{ label.description }}" placeholder="Description"
+           class="input-base w-full text-sm px-3 py-1.5 rounded-md border" />
+    <div class="flex gap-2">
+      <button type="submit" class="btn-accent text-xs px-3 py-1.5 rounded-md font-medium">Save</button>
+      <button type="button" @click="editing = false"
+              class="text-xs text-secondary hover:text-primary px-3 py-1.5 rounded-md border border-base hover:bg-surface2">Cancel</button>
     </div>
   </form>
 </div>

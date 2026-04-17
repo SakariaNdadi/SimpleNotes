@@ -1,15 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Verify Email – Notes{% endblock %}
+{% block title %}Verify email – Notes{% endblock %}
 {% block body %}
-<div class="auth-page">
-  <div class="auth-card">
-    <h1 class="auth-logo">📝 Notes</h1>
-    {% if error %}
-    <div class="alert alert-error">{{ error }}</div>
-    {% else %}
-    <div class="alert alert-success">{{ success }}</div>
-    {% endif %}
-    <div class="auth-links"><a href="/login">Sign in →</a></div>
+<div class="min-h-screen bg-app flex items-center justify-center p-4">
+  <div class="w-full max-w-sm text-center">
+    <div class="text-5xl mb-4">{% if error %}❌{% else %}✅{% endif %}</div>
+    <div class="bg-surface rounded-2xl border border-base p-6 shadow-sm">
+      {% if error %}
+      <div class="bg-error rounded-lg px-4 py-3 text-sm">{{ error }}</div>
+      {% else %}
+      <div class="bg-success rounded-lg px-4 py-3 text-sm">{{ success }}</div>
+      {% endif %}
+    </div>
+    <p class="text-center text-sm text-muted mt-5">
+      <a href="/login" class="text-accent font-medium hover:underline">Sign in →</a>
+    </p>
   </div>
 </div>
 {% endblock %}

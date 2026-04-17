@@ -57,6 +57,20 @@ async def create_note(
     )
 
 
+@router.get("/{note_id}", response_class=HTMLResponse)
+async def get_note_card(
+    request: Request,
+    note_id: str,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    note = service.get_note(db, note_id, user.id)
+    if not note:
+        return HTMLResponse("Not found", status_code=404)
+    labels = get_labels(db, user.id)
+    return templates.TemplateResponse("partials/note_card.html", {"request": request, "note": note, "labels": labels})
+
+
 @router.get("/{note_id}/edit", response_class=HTMLResponse)
 async def edit_note_form(
     request: Request,

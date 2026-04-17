@@ -1,55 +1,64 @@
 {% extends "base.html" %}
-{% block title %}Register – Notes{% endblock %}
+{% block title %}Create account – Notes{% endblock %}
 {% block body %}
-<div class="auth-page">
-  <div class="auth-card">
-    <h1 class="auth-logo">📝 Notes</h1>
-    <h2>Create account</h2>
-
-    {% if success %}
-    <div class="alert alert-success">{{ success }}</div>
-    {% endif %}
-
-    {% if not success %}
-    <form method="post" action="/register">
-      <div class="field">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" value="{{ values.username if values else '' }}"
-               required autocomplete="username" />
-        {% if errors and errors.username %}
-        <span class="field-error">{{ errors.username }}</span>
-        {% endif %}
-        <span class="field-hint">3–20 chars, letters/numbers/underscore</span>
-      </div>
-      <div class="field">
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" value="{{ values.email if values else '' }}" required />
-        {% if errors and errors.email %}
-        <span class="field-error">{{ errors.email }}</span>
-        {% endif %}
-      </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required />
-        {% if errors and errors.password %}
-        <span class="field-error">{{ errors.password }}</span>
-        {% endif %}
-        <span class="field-hint">8+ chars, 1 uppercase, 1 digit</span>
-      </div>
-      <div class="field">
-        <label for="confirm_password">Confirm password</label>
-        <input type="password" id="confirm_password" name="confirm_password" required />
-        {% if errors and errors.confirm_password %}
-        <span class="field-error">{{ errors.confirm_password }}</span>
-        {% endif %}
-      </div>
-      <button type="submit" class="btn btn-primary btn-full">Create account</button>
-    </form>
-    {% endif %}
-
-    <div class="auth-links">
-      <a href="/login">Already have an account? Sign in</a>
+<div class="min-h-screen bg-app flex items-center justify-center p-4">
+  <div class="w-full max-w-sm">
+    <div class="text-center mb-8">
+      <div class="text-4xl mb-3">📝</div>
+      <h1 class="text-2xl font-bold text-primary tracking-tight">Create account</h1>
+      <p class="text-sm text-muted mt-1">Your notes, your way</p>
     </div>
+
+    <div class="bg-surface rounded-2xl border border-base p-6 shadow-sm">
+      {% if success %}
+      <div class="bg-success rounded-lg px-4 py-3 text-sm">{{ success }}</div>
+      {% else %}
+      <form method="post" action="/register" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-secondary mb-1.5">Username</label>
+          <input type="text" name="username" value="{{ values.username if values else '' }}"
+                 required autocomplete="username"
+                 class="input-base w-full px-3 py-2.5 rounded-xl border text-sm {% if errors and errors.username %}border-red-400{% endif %}" />
+          {% if errors and errors.username %}
+          <p class="text-xs text-red-500 mt-1">{{ errors.username }}</p>
+          {% endif %}
+          <p class="text-xs text-muted mt-1">3–20 chars, letters/numbers/underscore</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-secondary mb-1.5">Email</label>
+          <input type="email" name="email" value="{{ values.email if values else '' }}" required
+                 class="input-base w-full px-3 py-2.5 rounded-xl border text-sm {% if errors and errors.email %}border-red-400{% endif %}" />
+          {% if errors and errors.email %}
+          <p class="text-xs text-red-500 mt-1">{{ errors.email }}</p>
+          {% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-secondary mb-1.5">Password</label>
+          <input type="password" name="password" required
+                 class="input-base w-full px-3 py-2.5 rounded-xl border text-sm {% if errors and errors.password %}border-red-400{% endif %}" />
+          {% if errors and errors.password %}
+          <p class="text-xs text-red-500 mt-1">{{ errors.password }}</p>
+          {% endif %}
+          <p class="text-xs text-muted mt-1">8+ chars, 1 uppercase, 1 digit</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-secondary mb-1.5">Confirm password</label>
+          <input type="password" name="confirm_password" required
+                 class="input-base w-full px-3 py-2.5 rounded-xl border text-sm {% if errors and errors.confirm_password %}border-red-400{% endif %}" />
+          {% if errors and errors.confirm_password %}
+          <p class="text-xs text-red-500 mt-1">{{ errors.confirm_password }}</p>
+          {% endif %}
+        </div>
+        <button type="submit"
+                class="btn-accent w-full py-2.5 rounded-xl text-sm font-semibold mt-2">Create account</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <p class="text-center text-sm text-muted mt-5">
+      Already have an account?
+      <a href="/login" class="text-accent font-medium hover:underline">Sign in</a>
+    </p>
   </div>
 </div>
 {% endblock %}

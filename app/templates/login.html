@@ -1,32 +1,42 @@
 {% extends "base.html" %}
-{% block title %}Login – Notes{% endblock %}
+{% block title %}Sign in – Notes{% endblock %}
 {% block body %}
-<div class="auth-page">
-  <div class="auth-card">
-    <h1 class="auth-logo">📝 Notes</h1>
-    <h2>Sign in</h2>
-
-    {% if error %}
-    <div class="alert alert-error">{{ error }}</div>
-    {% endif %}
-
-    <form method="post" action="/login">
-      <div class="field">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" value="{{ username or '' }}" required autofocus />
-      </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required />
-      </div>
-      <button type="submit" class="btn btn-primary btn-full">Sign in</button>
-    </form>
-
-    <div class="auth-links">
-      <a href="/forgot-password">Forgot password?</a>
-      <span>·</span>
-      <a href="/register">Create account</a>
+<div class="min-h-screen bg-app flex items-center justify-center p-4">
+  <div class="w-full max-w-sm">
+    <div class="text-center mb-8">
+      <div class="text-4xl mb-3">📝</div>
+      <h1 class="text-2xl font-bold text-primary tracking-tight">Welcome back</h1>
+      <p class="text-sm text-muted mt-1">Sign in to your notes</p>
     </div>
+
+    <div class="bg-surface rounded-2xl border border-base p-6 shadow-sm">
+      {% if error %}
+      <div class="bg-error rounded-lg px-4 py-3 text-sm mb-4">{{ error }}</div>
+      {% endif %}
+
+      <form method="post" action="/login" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-secondary mb-1.5">Username</label>
+          <input type="text" name="username" value="{{ username or '' }}" required autofocus
+                 class="input-base w-full px-3 py-2.5 rounded-xl border text-sm" />
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-sm font-medium text-secondary">Password</label>
+            <a href="/forgot-password" class="text-xs text-accent hover:underline">Forgot password?</a>
+          </div>
+          <input type="password" name="password" required
+                 class="input-base w-full px-3 py-2.5 rounded-xl border text-sm" />
+        </div>
+        <button type="submit"
+                class="btn-accent w-full py-2.5 rounded-xl text-sm font-semibold mt-2">Sign in</button>
+      </form>
+    </div>
+
+    <p class="text-center text-sm text-muted mt-5">
+      No account?
+      <a href="/register" class="text-accent font-medium hover:underline">Create one</a>
+    </p>
   </div>
 </div>
 {% endblock %}

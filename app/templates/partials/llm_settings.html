@@ -1,68 +1,90 @@
-<div class="llm-settings" x-data="{ showForm: false }">
-  {% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
-
-  <h4>Active LLM configurations</h4>
-  {% if configs %}
-  {% for cfg in configs %}
-  <div class="llm-config-item {% if cfg.is_active %}llm-config-active{% endif %}">
-    <div class="llm-config-info">
-      <strong>{{ cfg.provider_name }}</strong> · {{ cfg.model_name }}
-      {% if cfg.base_url %}<span class="muted">({{ cfg.base_url }})</span>{% endif %}
-      {% if cfg.is_active %}<span class="badge badge-active">Active</span>{% endif %}
-    </div>
-    <div class="llm-config-actions">
-      {% if not cfg.is_active %}
-      <button class="btn btn-sm btn-ghost"
-              hx-post="/settings/llm/{{ cfg.id }}/activate"
-              hx-target=".llm-settings"
-              hx-swap="outerHTML">Set active</button>
-      {% endif %}
-      <button class="btn btn-sm btn-ghost btn-danger"
-              hx-delete="/settings/llm/{{ cfg.id }}"
-              hx-target=".llm-settings"
-              hx-swap="outerHTML"
-              hx-confirm="Remove this LLM config?">Remove</button>
-    </div>
-  </div>
-  {% endfor %}
-  {% else %}
-  <p class="muted">No LLM configured yet.</p>
+<div class="llm-settings space-y-4" x-data="{ showForm: false }">
+  {% if success %}
+  <div class="bg-success text-sm px-4 py-3 rounded-xl">{{ success }}</div>
   {% endif %}
 
-  <button class="btn btn-primary btn-sm" @click="showForm = !showForm">+ Add LLM</button>
+  <div class="space-y-2">
+    {% if configs %}
+    {% for cfg in configs %}
+    <div class="flex items-center justify-between p-3 rounded-xl border border-base {% if cfg.is_active %}bg-ai-surface border-[color:var(--ai-border)]{% else %}bg-surface2{% endif %}">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-sm font-medium text-primary">{{ cfg.provider_name }}</span>
+          <span class="text-xs text-muted">{{ cfg.model_name }}</span>
+          {% if cfg.is_active %}
+          <span class="text-xs bg-tag px-2 py-0.5 rounded-full font-medium">Active</span>
+          {% endif %}
+        </div>
+        {% if cfg.base_url %}
+        <p class="text-xs text-muted mt-0.5 truncate">{{ cfg.base_url }}</p>
+        {% endif %}
+      </div>
+      <div class="flex gap-1 ml-2 flex-shrink-0">
+        {% if not cfg.is_active %}
+        <button hx-post="/settings/llm/{{ cfg.id }}/activate"
+                hx-target=".llm-settings" hx-swap="outerHTML"
+                class="text-xs text-accent hover:underline px-2 py-1">Activate</button>
+        {% endif %}
+        <button hx-delete="/settings/llm/{{ cfg.id }}"
+                hx-target=".llm-settings" hx-swap="outerHTML"
+                hx-confirm="Remove this config?"
+                class="text-xs text-red-500 hover:underline px-2 py-1">Remove</button>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="text-center py-8 text-muted">
+      <div class="text-3xl mb-2">🤖</div>
+      <p class="text-sm">No LLM configured yet</p>
+    </div>
+    {% endif %}
+  </div>
 
-  <form x-show="showForm"
+  <button @click="showForm = !showForm"
+          class="btn-accent text-sm font-medium px-4 py-2 rounded-xl w-full">+ Add LLM</button>
+
+  <form x-show="showForm" x-transition
         hx-post="/settings/llm"
         hx-target=".llm-settings"
         hx-swap="outerHTML"
         hx-on::after-request="showForm = false"
-        class="llm-form">
-
-    <div class="field">
-      <label>Provider name</label>
-      <input type="text" name="provider_name" placeholder="openai / anthropic / ollama / custom" required />
+        class="space-y-3 p-4 bg-surface2 rounded-xl border border-base">
+    <div>
+      <label class="block text-xs font-medium text-secondary mb-1">Provider name</label>
+      <input type="text" name="provider_name" required
+             placeholder="openai / anthropic / ollama / custom"
+             class="input-base w-full px-3 py-2 rounded-lg border text-sm" />
     </div>
-    <div class="field">
-      <label>Model name</label>
-      <input type="text" name="model_name" placeholder="gpt-4o / claude-3-5-sonnet / gemma3 / deepseek-r1" required />
+    <div>
+      <label class="block text-xs font-medium text-secondary mb-1">Model name</label>
+      <input type="text" name="model_name" required
+             placeholder="gpt-4o / claude-3-5-sonnet / gemma3 / deepseek-r1"
+             class="input-base w-full px-3 py-2 rounded-lg border text-sm" />
     </div>
-    <div class="field">
-      <label>Base URL <span class="muted">(for Ollama/self-hosted, e.g. http://localhost:11434)</span></label>
-      <input type="url" name="base_url" placeholder="Leave empty for cloud providers" />
+    <div>
+      <label class="block text-xs font-medium text-secondary mb-1">
+        Base URL <span class="text-muted font-normal">(Ollama / self-hosted — leave empty for cloud)</span>
+      </label>
+      <input type="url" name="base_url"
+             placeholder="http://localhost:11434"
+             class="input-base w-full px-3 py-2 rounded-lg border text-sm" />
     </div>
-    <div class="field">
-      <label>API Key <span class="muted">(encrypted at rest, leave empty for Ollama)</span></label>
-      <input type="password" name="api_key" placeholder="sk-…" />
+    <div>
+      <label class="block text-xs font-medium text-secondary mb-1">
+        API Key <span class="text-muted font-normal">(encrypted at rest)</span>
+      </label>
+      <input type="password" name="api_key" placeholder="sk-… (leave empty for Ollama)"
+             class="input-base w-full px-3 py-2 rounded-lg border text-sm" />
     </div>
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary">Save & activate</button>
-      <button type="button" class="btn btn-ghost" @click="showForm = false">Cancel</button>
+    <div class="flex gap-2">
+      <button type="submit" class="btn-accent text-sm font-medium px-4 py-2 rounded-lg flex-1">Save & activate</button>
+      <button type="button" @click="showForm = false"
+              class="text-sm text-secondary hover:text-primary px-4 py-2 rounded-lg border border-base hover:bg-surface transition-colors">Cancel</button>
     </div>
   </form>
 
-  <div class="llm-hint">
-    <strong>Supported providers:</strong>
-    OpenAI, Anthropic, Google Gemini, Cohere, Mistral, Ollama (Gemma, DeepSeek, Llama), any OpenAI-compatible endpoint.
-    See <a href="/docs/llm-config" target="_blank">docs</a> for setup guides.
-  </div>
+  <p class="text-xs text-muted leading-relaxed">
+    Supports OpenAI, Anthropic, Gemini, Ollama (Gemma, DeepSeek, Llama), and any OpenAI-compatible endpoint.
+    See <a href="/docs/llm-config" class="text-accent hover:underline" target="_blank">docs</a>.
+  </p>
 </div>
