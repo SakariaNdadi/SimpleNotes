@@ -61,7 +61,7 @@
                     Add label
                 </button>
                 <form x-show="addLabelOpen" x-transition hx-post="/labels" hx-target="#label-list" hx-swap="innerHTML"
-                    hx-on::after-request="addLabelOpen = false; htmx.trigger(document.body, 'labelChanged')"
+                    hx-on::after-request="addLabelOpen = false; this.reset()"
                     class="mt-1.5 space-y-1.5 bg-surface2 p-2 rounded border border-base">
                     <input type="text" name="title" placeholder="Label name" required
                         class="input-base w-full text-[12px] px-2 py-1 rounded border outline-none focus:border-accent" />
@@ -408,6 +408,7 @@
                 this.currentPalette = savedPalette;
 
                 document.body.addEventListener('htmx:afterSettle', (e) => {
+                    if (e.detail?.elt) Alpine.initTree(e.detail.elt);
                     const trigger = e.detail?.xhr?.getResponseHeader('HX-Trigger');
                     if (trigger) {
                         try {
