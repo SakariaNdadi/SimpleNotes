@@ -65,7 +65,6 @@ async def complete(db: Session, user_id: str, messages: list[dict]) -> str:
         response = await litellm.acompletion(messages=messages, **kwargs)
         return response.choices[0].message.content or ""
     except Exception as litellm_err:
-        # Fallback: direct httpx for custom endpoints
         if config.base_url:
             try:
                 api_key = (
@@ -81,11 +80,16 @@ async def complete(db: Session, user_id: str, messages: list[dict]) -> str:
         return f"AI error: {litellm_err}"
 
 
-async def summarize_note(db: Session, user_id: str, note_text: str) -> str:
+async def summarize_note(
+    db: Session, user_id: str, note_text: str, languages: list[str] | None = None
+) -> str:
+    lang_hint = ""
+    if languages and languages != ["en"]:
+        lang_hint = f" The user writes in: {', '.join(languages)}. Preserve language context in your summary."
     messages = [
         {
             "role": "system",
-            "content": "Summarize the following note in 2-3 concise sentences.",
+            "content": f"Summarize the following note in 2-3 concise sentences.{lang_hint}",
         },
         {"role": "user", "content": note_text},
     ]
@@ -117,7 +121,9 @@ async def detect_tasks(db: Session, user_id: str, note_text: str) -> list[dict]:
         return []
 
 
-async def semantic_search(db: Session, user_id: str, query: str, notes: list) -> list:
+async def semantic_search(
+    db: Session, user_id: str, query: str, notes: list, languages: list[str] | None = None
+) -> list:
     """
     Dev fallback: rank notes by keyword relevance using LLM.
     Prod should use pgvector embeddings instead.
@@ -125,13 +131,17 @@ async def semantic_search(db: Session, user_id: str, query: str, notes: list) ->
     if not notes:
         return []
 
+    lang_hint = ""
+    if languages:
+        lang_hint = f" The user may write notes in: {', '.join(languages)}. Consider multilingual matches."
+
     numbered = "\n".join(f"{i + 1}. {n.description[:200]}" for i, n in enumerate(notes))
     messages = [
         {
             "role": "system",
             "content": (
                 "Given the search query and a numbered list of notes, return the numbers of the most relevant notes "
-                "in order of relevance as a JSON array of integers. Max 10 results. Return ONLY JSON array."
+                f"in order of relevance as a JSON array of integers. Max 10 results. Return ONLY JSON array.{lang_hint}"
             ),
         },
         {"role": "user", "content": f"Query: {query}\n\nNotes:\n{numbered}"},
