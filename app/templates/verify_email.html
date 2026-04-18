@@ -3,7 +3,19 @@
 {% block body %}
 <div class="min-h-screen bg-app flex items-center justify-center p-4">
   <div class="w-full max-w-sm text-center">
-    <div class="text-5xl mb-4">{% if error %}❌{% else %}✅{% endif %}</div>
+    <div class="mb-4 flex justify-center">
+      {% if error %}
+      <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      {% else %}
+      <svg class="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      {% endif %}
+    </div>
     <div class="bg-surface rounded-2xl border border-base p-6 shadow-sm">
       {% if error %}
       <div class="bg-error rounded-lg px-4 py-3 text-sm">{{ error }}</div>
