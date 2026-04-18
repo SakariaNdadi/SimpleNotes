@@ -1,5 +1,30 @@
 <div class="space-y-7">
 
+  <!-- Panel Style -->
+  <section x-data="{ mode: $store.app.panelMode || 'panel' }">
+    <h3 class="text-xs font-semibold text-muted uppercase tracking-widest mb-3">Panel Style</h3>
+    <div class="grid grid-cols-2 gap-2">
+      <button @click="mode = 'panel'; $store.app.panelMode = 'panel'; localStorage.setItem('notes-panel-mode', 'panel')"
+              :class="mode === 'panel' ? 'border-[color:var(--accent)] bg-[color:var(--surface2)] text-primary' : 'border-base text-secondary hover:bg-[color:var(--surface2)]'"
+              class="flex flex-col items-center gap-2 px-3 py-3 rounded-xl border transition-all text-sm">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 3H5a2 2 0 00-2 2v14a2 2 0 002 2h4M9 3h10a2 2 0 012 2v14a2 2 0 01-2 2H9M9 3v18"/>
+        </svg>
+        <span class="text-xs font-medium">Side panel</span>
+      </button>
+      <button @click="mode = 'modal'; $store.app.panelMode = 'modal'; localStorage.setItem('notes-panel-mode', 'modal')"
+              :class="mode === 'modal' ? 'border-[color:var(--accent)] bg-[color:var(--surface2)] text-primary' : 'border-base text-secondary hover:bg-[color:var(--surface2)]'"
+              class="flex flex-col items-center gap-2 px-3 py-3 rounded-xl border transition-all text-sm">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM9 9h6m-6 4h6"/>
+        </svg>
+        <span class="text-xs font-medium">Modal</span>
+      </button>
+    </div>
+  </section>
+
   <!-- Font Picker -->
   <section>
     <h3 class="text-xs font-semibold text-muted uppercase tracking-widest mb-3">Font</h3>
