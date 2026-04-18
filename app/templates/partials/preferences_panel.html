@@ -1,0 +1,81 @@
+<div class="space-y-7">
+
+  <!-- Font Picker -->
+  <section>
+    <h3 class="text-xs font-semibold text-muted uppercase tracking-widest mb-3">Font</h3>
+    <div class="space-y-1.5">
+      {% for font in fonts %}
+      <form hx-post="/preferences/font" hx-target="#font-save-status" hx-swap="innerHTML">
+        <input type="hidden" name="font" value="{{ font.id }}">
+        <button type="submit"
+                class="w-full text-left px-3 py-2.5 rounded-xl border transition-all text-sm
+                       {% if prefs.font == font.id %}border-[color:var(--accent)] bg-[color:var(--surface2)] font-medium text-primary{% else %}border-base text-secondary hover:bg-[color:var(--surface2)] hover:border-[color:var(--accent)]{% endif %}"
+                style="font-family: {{ font.css }}">
+          {{ font.label }}
+        </button>
+      </form>
+      {% endfor %}
+    </div>
+    <div id="font-save-status" class="mt-1.5 h-4"></div>
+  </section>
+
+  <!-- AI Summaries -->
+  <section>
+    <h3 class="text-xs font-semibold text-muted uppercase tracking-widest mb-3">AI Summaries</h3>
+    <form hx-post="/preferences/ai-summary-toggle" hx-target="#summary-save-status" hx-swap="innerHTML"
+          class="flex items-center justify-between p-3 rounded-xl border border-base hover:bg-[color:var(--surface2)] transition-colors">
+      <div>
+        <p class="text-sm font-medium text-primary">Save summaries</p>
+        <p class="text-xs text-muted mt-0.5">Summaries are stored and shown without re-generating</p>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+        <input type="checkbox" name="save_ai_summaries" class="sr-only peer"
+               {% if prefs.save_ai_summaries %}checked{% endif %}
+               onchange="this.closest('form').requestSubmit()">
+        <div class="w-9 h-5 bg-[color:var(--border)] peer-checked:bg-[color:var(--accent)] rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
+      </label>
+    </form>
+    <div id="summary-save-status" class="mt-1.5 h-4"></div>
+  </section>
+
+  <!-- Edit History Depth -->
+  <section>
+    <h3 class="text-xs font-semibold text-muted uppercase tracking-widest mb-3">Edit History</h3>
+    <form hx-post="/preferences/history-depth" hx-target="#history-save-status" hx-swap="innerHTML"
+          class="flex items-center justify-between p-3 rounded-xl border border-base">
+      <div>
+        <p class="text-sm font-medium text-primary">Versions to keep</p>
+        <p class="text-xs text-muted mt-0.5">0 = off, up to 5 past edits saved per note</p>
+      </div>
+      <select name="max_edit_history"
+              class="input-base text-sm px-2 py-1.5 rounded-lg border ml-3 flex-shrink-0"
+              onchange="this.closest('form').requestSubmit()">
+        {% for i in range(6) %}
+        <option value="{{ i }}" {% if prefs.max_edit_history == i %}selected{% endif %}>{{ i }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    <div id="history-save-status" class="mt-1.5 h-4"></div>
+  </section>
+
+  <!-- Languages -->
+  <section>
+    <h3 class="text-xs font-semibold text-muted uppercase tracking-widest mb-1">Languages I write in</h3>
+    <p class="text-xs text-muted mb-3">Used to improve AI search across multilingual notes</p>
+    <form hx-post="/preferences/languages" hx-target="#lang-save-status" hx-swap="innerHTML">
+      <div class="grid grid-cols-2 gap-1.5 mb-2">
+        {% for lang in languages %}
+        <label class="flex items-center gap-2 px-3 py-2 rounded-xl border border-base hover:bg-[color:var(--surface2)] cursor-pointer transition-colors text-sm">
+          <input type="checkbox" name="languages" value="{{ lang.code }}"
+                 {% if lang.code in selected_langs %}checked{% endif %}
+                 class="w-3.5 h-3.5 rounded accent-[color:var(--accent)]">
+          <span class="text-secondary">{{ lang.label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn-accent text-xs font-medium px-3 py-1.5 rounded-lg w-full">Save languages</button>
+    </form>
+    <div id="lang-save-status" class="mt-1.5 h-4"></div>
+  </section>
+
+</div>

@@ -1,28 +1,37 @@
-<div class="bg-surface rounded-xl border-2 border-[color:var(--accent)] p-4 shadow-sm" id="note-{{ note.id }}">
-  <form hx-put="/notes/{{ note.id }}"
-        hx-target="#note-{{ note.id }}"
-        hx-swap="outerHTML"
-        @keydown.ctrl.enter="$el.requestSubmit()"
-        @keydown.meta.enter="$el.requestSubmit()">
-    <textarea name="description" rows="5" required autofocus
-              class="input-base w-full text-[15px] leading-relaxed px-0 py-0 border-0 bg-transparent resize-none focus:ring-0 mb-3">{{ note.description }}</textarea>
-    <div class="flex items-center justify-between border-t border-base pt-3">
-      <select name="label_id"
-              class="input-base text-sm px-2 py-1 rounded-md border bg-surface2">
-        <option value="">No label</option>
-        {% for label in labels %}
-        <option value="{{ label.id }}" {% if note.label_id == label.id %}selected{% endif %}>{{ label.title }}</option>
-        {% endfor %}
-      </select>
-      <div class="flex items-center gap-2">
-        <button type="button"
-                hx-get="/notes/{{ note.id }}"
-                hx-target="#note-{{ note.id }}"
-                hx-swap="outerHTML"
-                class="text-sm text-secondary hover:text-primary px-3 py-1.5 rounded-lg transition-colors">Cancel</button>
-        <button type="submit"
-                class="btn-accent text-sm font-medium px-4 py-1.5 rounded-lg">Save</button>
+<div class="relative flex gap-4 pb-6" id="note-{{ note.id }}">
+  <!-- Dot (active state) -->
+  <div class="flex-shrink-0 flex flex-col items-center z-10">
+    <div class="w-2.5 h-2.5 rounded-full border-2 border-[color:var(--accent)] bg-[color:var(--accent)] mt-1"></div>
+  </div>
+
+  <!-- Edit form -->
+  <div class="flex-1 min-w-0">
+    <form hx-put="/notes/{{ note.id }}"
+          hx-target="#note-{{ note.id }}"
+          hx-swap="outerHTML"
+          @keydown.ctrl.enter="$el.requestSubmit()"
+          @keydown.meta.enter="$el.requestSubmit()"
+          class="border border-[color:var(--accent)] rounded-xl overflow-hidden bg-[color:var(--surface)]">
+      <textarea name="description" rows="5" required autofocus
+                class="input-base w-full text-[14px] leading-relaxed px-4 pt-3 pb-1 border-0 bg-transparent resize-none focus:ring-0">{{ note.description }}</textarea>
+      <div class="flex items-center justify-between px-3 py-2 border-t border-base bg-[color:var(--surface2)]">
+        <select name="label_id"
+                class="input-base text-sm px-2 py-1 rounded-md border bg-[color:var(--surface2)]">
+          <option value="">No label</option>
+          {% for label in labels %}
+          <option value="{{ label.id }}" {% if note.label_id == label.id %}selected{% endif %}>{{ label.title }}</option>
+          {% endfor %}
+        </select>
+        <div class="flex items-center gap-2">
+          <button type="button"
+                  hx-get="/notes/{{ note.id }}"
+                  hx-target="#note-{{ note.id }}"
+                  hx-swap="outerHTML"
+                  class="text-sm text-secondary hover:text-primary px-3 py-1.5 rounded-lg transition-colors">Cancel</button>
+          <button type="submit"
+                  class="btn-accent text-sm font-medium px-4 py-1.5 rounded-lg">Save</button>
+        </div>
       </div>
-    </div>
-  </form>
+    </form>
+  </div>
 </div>

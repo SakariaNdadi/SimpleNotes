@@ -112,3 +112,16 @@
 ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
 
 [x-cloak] { display: none !important; }
+
+/* ── Timeline Feed ───────────────────────────────────────────────────────────── */
+/* All other timeline styles use Tailwind classes. Only ::before needs custom CSS. */
+.timeline-feed::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 8px;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--border);
+  z-index: 0;
+}

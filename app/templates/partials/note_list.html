@@ -1,6 +1,8 @@
-{% for note in notes %}
-{% include "partials/note_card.html" %}
-{% endfor %}
+<div class="relative timeline-feed">
+  {% for note in notes %}
+  {% include "partials/note_timeline_item.html" %}
+  {% endfor %}
+</div>
 
 {% if has_more %}
 <div hx-get="/notes?offset={{ next_offset }}&label_id={{ label_id }}"
