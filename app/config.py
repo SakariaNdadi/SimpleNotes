@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     MICROSOFT_CLIENT_SECRET: str = ""
     MICROSOFT_TENANT_ID: str = "common"
 
+    # Search
+    MEILI_URL: str = ""
+    MEILI_KEY: str = ""
+    EMBEDDING_MODEL: str = ""  # e.g. "text-embedding-3-small", "ollama/nomic-embed-text"
+
     class Config:
         env_file = ".env"
         extra = "ignore"

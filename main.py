@@ -56,6 +56,28 @@ app.include_router(preferences_router)
 async def on_startup():
     create_tables()
     # _apply_migrations()
+    _setup_search()
+
+
+def _setup_search() -> None:
+    from app.search.meili import setup_index
+    setup_index()
+
+    if settings.DATABASE_URL.startswith("sqlite"):
+        return
+
+    from sqlalchemy import text
+    from app.database import engine
+    with engine.connect() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        conn.execute(text(
+            "ALTER TABLE notes ADD COLUMN IF NOT EXISTS embedding vector(1536)"
+        ))
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS notes_emb_idx ON notes "
+            "USING hnsw (embedding vector_cosine_ops)"
+        ))
+        conn.commit()
 
 
 @app.get("/", response_class=HTMLResponse)

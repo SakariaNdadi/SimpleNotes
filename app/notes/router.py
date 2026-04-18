@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+
+from app.search.hybrid import embed_and_index
 
 from app.auth.router import require_user
 from app.database import get_db
@@ -42,6 +44,7 @@ async def list_notes(
 @router.post("", response_class=HTMLResponse)
 async def create_note(
     request: Request,
+    background_tasks: BackgroundTasks,
     description: str = Form(...),
     label_id: str = Form(""),
     user: User = Depends(require_user),
@@ -50,6 +53,7 @@ async def create_note(
     if not description.strip():
         return HTMLResponse('<p class="error">Note cannot be empty</p>', status_code=422)
     note = service.create_note(db, user.id, description.strip(), label_id or None)
+    background_tasks.add_task(embed_and_index, note.id, user.id, note.description)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
         "partials/note_timeline_item.html",
@@ -139,6 +143,7 @@ async def note_history(
 async def update_note(
     request: Request,
     note_id: str,
+    background_tasks: BackgroundTasks,
     description: str = Form(...),
     label_id: str = Form(""),
     user: User = Depends(require_user),
@@ -153,6 +158,7 @@ async def update_note(
     note = service.update_note(
         db, note, description.strip(), label_id or None, max_history=prefs.max_edit_history
     )
+    background_tasks.add_task(embed_and_index, note.id, user.id, note.description)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
         "partials/note_timeline_item.html", {"request": request, "note": note, "labels": labels}
@@ -199,12 +205,15 @@ async def delete_note(
 @router.delete("/{note_id}/permanent", response_class=HTMLResponse)
 async def permanent_delete(
     note_id: str,
+    background_tasks: BackgroundTasks,
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
+    from app.search.meili import delete_note as meili_delete
     note = service.get_note_any(db, note_id, user.id)
     if note:
         service.delete_note(db, note)
+        background_tasks.add_task(meili_delete, note_id)
     return HTMLResponse("")
 
 
@@ -213,6 +222,7 @@ async def restore_from_history(
     request: Request,
     note_id: str,
     history_id: str,
+    background_tasks: BackgroundTasks,
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
@@ -228,6 +238,7 @@ async def restore_from_history(
     note = service.update_note(
         db, note, entry.description, entry.label_id, max_history=prefs.max_edit_history
     )
+    background_tasks.add_task(embed_and_index, note.id, user.id, note.description)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
         "partials/note_timeline_item.html", {"request": request, "note": note, "labels": labels}

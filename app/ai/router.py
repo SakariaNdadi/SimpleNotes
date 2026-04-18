@@ -8,7 +8,7 @@ from app.auth.router import require_user
 from app.auth.utils import encrypt_value
 from app.database import get_db
 from app.models import User, UserLLMConfig
-from app.notes.service import get_notes, search_notes
+from app.search.hybrid import hybrid_search
 from app.notes.summary_service import delete_summary, get_summary, save_summary
 from app.notes.task_service import save_tasks
 from app.preferences.service import get_languages, get_or_create_prefs
@@ -142,18 +142,7 @@ async def ai_search(
 ):
     from app.labels.service import get_labels
 
-    prefs = get_or_create_prefs(db, user.id)
-    langs = get_languages(prefs)
-
-    has_llm = db.query(UserLLMConfig).filter(
-        UserLLMConfig.user_id == user.id, UserLLMConfig.is_active == True  # noqa: E712
-    ).first()
-
-    if has_llm:
-        all_notes = get_notes(db, user.id, limit=200)
-        results = await ai_service.semantic_search(db, user.id, query, all_notes, languages=langs)
-    else:
-        results = search_notes(db, user.id, query)
+    results = await hybrid_search(db, user.id, query)
 
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
