@@ -1,18 +1,22 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.auth.router import require_user
 from app.database import get_db
-from app.models import CalendarToken, User
+from app.models import CalendarToken, NoteTask, User
 from app.notes.task_service import (
     confirm_task,
+    delete_task,
     dismiss_task,
     get_discovered_tasks,
+    get_done_tasks,
     get_user_tasks,
     mark_task_done,
     set_task_status,
+    unmark_task_done,
+    update_task,
 )
 
 router = APIRouter(prefix="/tasks")
@@ -38,12 +42,14 @@ async def tasks_panel(
         for t in db.query(CalendarToken).filter(CalendarToken.user_id == user.id).all()
     ]
 
+    done = get_done_tasks(db, user.id)
     return templates.TemplateResponse(
         "partials/tasks_panel.html",
         {
             "request": request,
             "discovered": discovered,
             "tasks": created,
+            "done": done,
             "active_filter": filter,
             "providers": providers,
         },
@@ -94,6 +100,70 @@ async def complete_task(
 ):
     mark_task_done(db, task_id, user.id)
     return HTMLResponse("", headers={"HX-Trigger": "taskCountChanged"})
+
+
+@router.post("/{task_id}/undone", response_class=HTMLResponse)
+async def uncomplete_task(
+    task_id: str,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    unmark_task_done(db, task_id, user.id)
+    return HTMLResponse("", headers={"HX-Trigger": "taskCountChanged"})
+
+
+@router.delete("/{task_id}", response_class=HTMLResponse)
+async def delete_task_route(
+    task_id: str,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    delete_task(db, task_id, user.id)
+    return HTMLResponse("", headers={"HX-Trigger": "taskCountChanged"})
+
+
+@router.get("/{task_id}/edit", response_class=HTMLResponse)
+async def edit_task_form(
+    request: Request,
+    task_id: str,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    task = db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user.id).first()
+    if not task:
+        return HTMLResponse("Not found", status_code=404)
+    providers = [
+        t.provider
+        for t in db.query(CalendarToken).filter(CalendarToken.user_id == user.id).all()
+    ]
+    return templates.TemplateResponse(
+        "partials/task_edit_form.html",
+        {"request": request, "task": task, "providers": providers},
+    )
+
+
+@router.put("/{task_id}", response_class=HTMLResponse)
+async def update_task_route(
+    request: Request,
+    task_id: str,
+    title: str = Form(...),
+    description: str = Form(""),
+    due_datetime: str = Form(""),
+    task_type: str = Form("task"),
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    task = update_task(db, task_id, user.id, title, description, due_datetime, task_type)
+    if not task:
+        return HTMLResponse("Not found", status_code=404)
+    providers = [
+        t.provider
+        for t in db.query(CalendarToken).filter(CalendarToken.user_id == user.id).all()
+    ]
+    return templates.TemplateResponse(
+        "partials/task_card.html",
+        {"request": request, "task": task, "providers": providers},
+    )
 
 
 @router.post("/{task_id}/status", response_class=HTMLResponse)

@@ -82,3 +82,45 @@ def mark_task_done(db: Session, task_id: str, user_id: str) -> NoteTask | None:
         task.is_done = True
         db.commit()
     return task
+
+
+def unmark_task_done(db: Session, task_id: str, user_id: str) -> NoteTask | None:
+    task = db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user_id).first()
+    if task:
+        task.is_done = False
+        db.commit()
+    return task
+
+
+def update_task(
+    db: Session,
+    task_id: str,
+    user_id: str,
+    title: str,
+    description: str,
+    due_datetime: str | None,
+    task_type: str,
+) -> NoteTask | None:
+    task = db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user_id).first()
+    if task:
+        task.title = title[:500]
+        task.description = description
+        task.due_datetime = due_datetime or None
+        task.task_type = task_type
+        db.commit()
+    return task
+
+
+def delete_task(db: Session, task_id: str, user_id: str) -> None:
+    db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user_id).delete()
+    db.commit()
+
+
+def get_done_tasks(db: Session, user_id: str) -> list[NoteTask]:
+    return (
+        db.query(NoteTask)
+        .filter(NoteTask.user_id == user_id, NoteTask.is_done == True)  # noqa: E712
+        .order_by(NoteTask.created_at.desc())
+        .limit(50)
+        .all()
+    )
