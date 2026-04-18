@@ -7,6 +7,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     ForeignKey,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -40,6 +41,7 @@ class User(Base):
     calendar_tokens: Mapped[list[CalendarToken]] = relationship("CalendarToken", back_populates="user", cascade="all, delete-orphan")
     reset_tokens: Mapped[list[PasswordResetToken]] = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
     verify_tokens: Mapped[list[EmailVerificationToken]] = relationship("EmailVerificationToken", back_populates="user", cascade="all, delete-orphan")
+    preferences: Mapped[UserPreferences | None] = relationship("UserPreferences", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
 
 class PasswordResetToken(Base):
@@ -89,9 +91,15 @@ class Note(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
     is_edited: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     user: Mapped[User] = relationship("User", back_populates="notes")
     label: Mapped[Label | None] = relationship("Label", back_populates="notes")
+    tasks: Mapped[list[NoteTask]] = relationship("NoteTask", back_populates="note", cascade="all, delete-orphan")
+    summaries: Mapped[list[NoteSummary]] = relationship("NoteSummary", back_populates="note", cascade="all, delete-orphan")
+    history: Mapped[list[NoteHistory]] = relationship("NoteHistory", back_populates="note", cascade="all, delete-orphan")
 
 
 class UserLLMConfig(Base):
@@ -123,3 +131,58 @@ class CalendarToken(Base):
     user: Mapped[User] = relationship("User", back_populates="calendar_tokens")
 
     __table_args__ = (UniqueConstraint("user_id", "provider", name="uq_calendar_user_provider"),)
+
+
+class UserPreferences(Base):
+    __tablename__ = "user_preferences"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False, unique=True)
+    font: Mapped[str] = mapped_column(String(50), default="inter")
+    palette: Mapped[str] = mapped_column(String(50), default="default")
+    save_ai_summaries: Mapped[bool] = mapped_column(Boolean, default=False)
+    max_edit_history: Mapped[int] = mapped_column(Integer, default=3)
+    languages: Mapped[str] = mapped_column(Text, default='["en"]')
+
+    user: Mapped[User] = relationship("User", back_populates="preferences")
+
+
+class NoteTask(Base):
+    __tablename__ = "note_tasks"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"), nullable=False)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="")
+    task_type: Mapped[str] = mapped_column(String(20), default="task")
+    due_datetime: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    is_done: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    note: Mapped[Note] = relationship("Note", back_populates="tasks")
+
+
+class NoteSummary(Base):
+    __tablename__ = "note_summaries"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"), nullable=False, unique=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    note: Mapped[Note] = relationship("Note", back_populates="summaries")
+
+
+class NoteHistory(Base):
+    __tablename__ = "note_history"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"), nullable=False)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    label_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    saved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    note: Mapped[Note] = relationship("Note", back_populates="history")
