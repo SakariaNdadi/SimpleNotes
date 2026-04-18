@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from app.models import Note, NoteHistory
+from app.models import Note, NoteHistory, NoteTask
 
 
 def get_notes(
@@ -14,7 +14,7 @@ def get_notes(
     include_deleted: bool = False,
     include_archived: bool = False,
 ) -> list[Note]:
-    q = db.query(Note).filter(Note.user_id == user_id)
+    q = db.query(Note).options(joinedload(Note.tasks)).filter(Note.user_id == user_id)
     if not include_deleted:
         q = q.filter(Note.is_deleted == False)  # noqa: E712
     if not include_archived:

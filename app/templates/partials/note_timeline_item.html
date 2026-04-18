@@ -1,11 +1,13 @@
+{% set has_discovered = note.tasks | selectattr('status', 'equalto', 'discovered') | list | length > 0 %}
 <div class="relative flex gap-2.5 pb-1 group hover:pb-3 transition-all duration-200" id="note-{{ note.id }}">
     <div class="flex-shrink-0 flex flex-col items-center z-10">
         <div
-            class="w-2 h-2 rounded-full border-2 border-[color:var(--border)] bg-[color:var(--surface)] mt-1.5 group-hover:border-[color:var(--accent)] group-hover:bg-[color:var(--accent)] transition-all duration-200">
+            class="w-2 h-2 rounded-full border-2 mt-1.5 transition-all duration-200
+                   {% if has_discovered %}border-[color:var(--accent)] bg-[color:var(--accent)]{% else %}border-[color:var(--border)] bg-[color:var(--surface)] group-hover:border-[color:var(--accent)] group-hover:bg-[color:var(--accent)]{% endif %}">
         </div>
     </div>
 
-    <div class="flex-1 min-w-0">
+    <div class="flex-1 min-w-0 {% if has_discovered %}pl-2 border-l-2 border-[color:var(--accent)]/40 rounded-sm{% endif %}">
         <div class="flex items-start justify-between gap-2 mb-0.5">
             <div class="flex items-center gap-1.5 flex-wrap min-w-0">
                 {% if note.label %}
@@ -15,6 +17,16 @@
                 {% if note.is_edited %}
                 <span class="bg-edited text-[10px] px-1.5 py-0.5 rounded shrink-0"
                     title="Edited {{ note.updated_at.strftime('%b %d, %Y %H:%M') }}">Edited</span>
+                {% endif %}
+                {% if has_discovered %}
+                {% set disc_count = note.tasks | selectattr('status', 'equalto', 'discovered') | list | length %}
+                <span class="inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-[color:var(--accent)]/10 text-[color:var(--accent)] shrink-0">
+                  <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                  </svg>
+                  {{ disc_count }} task{{ 's' if disc_count != 1 }}
+                </span>
                 {% endif %}
             </div>
             <time class="text-[10px] text-muted whitespace-nowrap flex-shrink-0 mt-0.5">
