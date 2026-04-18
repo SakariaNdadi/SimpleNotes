@@ -6,8 +6,9 @@ from sqlalchemy.orm import Session
 from app.auth.router import require_user
 from app.database import get_db
 from app.labels.service import get_labels
-from app.models import User
+from app.models import NoteHistory, User
 from app.notes import service
+from app.preferences.service import get_or_create_prefs
 
 router = APIRouter(prefix="/notes")
 templates = Jinja2Templates(directory="app/templates")
@@ -51,9 +52,35 @@ async def create_note(
     note = service.create_note(db, user.id, description.strip(), label_id or None)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
-        "partials/note_card.html",
+        "partials/note_timeline_item.html",
         {"request": request, "note": note, "labels": labels},
         headers={"HX-Trigger": "noteCreated"},
+    )
+
+
+@router.get("/trash", response_class=HTMLResponse)
+async def trash_feed(
+    request: Request,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    notes = service.get_trash(db, user.id)
+    labels = get_labels(db, user.id)
+    return templates.TemplateResponse(
+        "partials/trash_list.html", {"request": request, "notes": notes, "labels": labels}
+    )
+
+
+@router.get("/archive", response_class=HTMLResponse)
+async def archive_feed(
+    request: Request,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    notes = service.get_archive(db, user.id)
+    labels = get_labels(db, user.id)
+    return templates.TemplateResponse(
+        "partials/archive_list.html", {"request": request, "notes": notes, "labels": labels}
     )
 
 
@@ -68,7 +95,9 @@ async def get_note_card(
     if not note:
         return HTMLResponse("Not found", status_code=404)
     labels = get_labels(db, user.id)
-    return templates.TemplateResponse("partials/note_card.html", {"request": request, "note": note, "labels": labels})
+    return templates.TemplateResponse(
+        "partials/note_timeline_item.html", {"request": request, "note": note, "labels": labels}
+    )
 
 
 @router.get("/{note_id}/edit", response_class=HTMLResponse)
@@ -82,7 +111,28 @@ async def edit_note_form(
     if not note:
         return HTMLResponse("Not found", status_code=404)
     labels = get_labels(db, user.id)
-    return templates.TemplateResponse("partials/note_edit_form.html", {"request": request, "note": note, "labels": labels})
+    return templates.TemplateResponse(
+        "partials/note_edit_form.html", {"request": request, "note": note, "labels": labels}
+    )
+
+
+@router.get("/{note_id}/history", response_class=HTMLResponse)
+async def note_history(
+    request: Request,
+    note_id: str,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    entries = (
+        db.query(NoteHistory)
+        .filter(NoteHistory.note_id == note_id, NoteHistory.user_id == user.id)
+        .order_by(NoteHistory.saved_at.desc())
+        .all()
+    )
+    return templates.TemplateResponse(
+        "partials/note_history_panel.html",
+        {"request": request, "entries": entries, "note_id": note_id},
+    )
 
 
 @router.put("/{note_id}", response_class=HTMLResponse)
@@ -99,9 +149,39 @@ async def update_note(
         return HTMLResponse("Not found", status_code=404)
     if not description.strip():
         return HTMLResponse('<p class="error">Note cannot be empty</p>', status_code=422)
-    note = service.update_note(db, note, description.strip(), label_id or None)
+    prefs = get_or_create_prefs(db, user.id)
+    note = service.update_note(
+        db, note, description.strip(), label_id or None, max_history=prefs.max_edit_history
+    )
     labels = get_labels(db, user.id)
-    return templates.TemplateResponse("partials/note_card.html", {"request": request, "note": note, "labels": labels})
+    return templates.TemplateResponse(
+        "partials/note_timeline_item.html", {"request": request, "note": note, "labels": labels}
+    )
+
+
+@router.post("/{note_id}/archive", response_class=HTMLResponse)
+async def archive_note(
+    note_id: str,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    note = service.get_note(db, note_id, user.id)
+    if note:
+        service.archive_note(db, note)
+    return HTMLResponse("")
+
+
+@router.post("/{note_id}/restore", response_class=HTMLResponse)
+async def restore_note(
+    request: Request,
+    note_id: str,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    note = service.get_note_any(db, note_id, user.id)
+    if note:
+        service.restore_note(db, note)
+    return HTMLResponse("")
 
 
 @router.delete("/{note_id}", response_class=HTMLResponse)
@@ -112,5 +192,43 @@ async def delete_note(
 ):
     note = service.get_note(db, note_id, user.id)
     if note:
+        service.trash_note(db, note)
+    return HTMLResponse("", headers={"HX-Trigger": "taskCountChanged"})
+
+
+@router.delete("/{note_id}/permanent", response_class=HTMLResponse)
+async def permanent_delete(
+    note_id: str,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    note = service.get_note_any(db, note_id, user.id)
+    if note:
         service.delete_note(db, note)
     return HTMLResponse("")
+
+
+@router.post("/{note_id}/history/{history_id}/restore", response_class=HTMLResponse)
+async def restore_from_history(
+    request: Request,
+    note_id: str,
+    history_id: str,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    entry = db.query(NoteHistory).filter(
+        NoteHistory.id == history_id,
+        NoteHistory.note_id == note_id,
+        NoteHistory.user_id == user.id,
+    ).first()
+    note = service.get_note(db, note_id, user.id)
+    if not entry or not note:
+        return HTMLResponse("Not found", status_code=404)
+    prefs = get_or_create_prefs(db, user.id)
+    note = service.update_note(
+        db, note, entry.description, entry.label_id, max_history=prefs.max_edit_history
+    )
+    labels = get_labels(db, user.id)
+    return templates.TemplateResponse(
+        "partials/note_timeline_item.html", {"request": request, "note": note, "labels": labels}
+    )
