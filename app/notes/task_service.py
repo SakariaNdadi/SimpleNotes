@@ -5,8 +5,15 @@ from sqlalchemy.orm import Session
 from app.models import NoteTask
 
 
-def save_tasks(db: Session, user_id: str, note_id: str, tasks: list[dict]) -> list[NoteTask]:
-    db.query(NoteTask).filter(NoteTask.note_id == note_id).delete()
+def save_tasks(
+    db: Session,
+    user_id: str,
+    note_id: str,
+    tasks: list[dict],
+    source: str = "llm",
+    status: str = "local",
+) -> list[NoteTask]:
+    db.query(NoteTask).filter(NoteTask.note_id == note_id, NoteTask.source == source).delete()
     saved = []
     for t in tasks:
         task = NoteTask(
@@ -16,6 +23,8 @@ def save_tasks(db: Session, user_id: str, note_id: str, tasks: list[dict]) -> li
             description=t.get("description", ""),
             task_type=t.get("type", "task"),
             due_datetime=t.get("datetime"),
+            source=source,
+            status=status,
         )
         db.add(task)
         saved.append(task)
@@ -23,13 +32,48 @@ def save_tasks(db: Session, user_id: str, note_id: str, tasks: list[dict]) -> li
     return saved
 
 
-def get_user_tasks(db: Session, user_id: str, done: bool = False) -> list[NoteTask]:
+def get_user_tasks(
+    db: Session,
+    user_id: str,
+    done: bool = False,
+    status: str | None = None,
+) -> list[NoteTask]:
+    q = db.query(NoteTask).filter(NoteTask.user_id == user_id, NoteTask.is_done == done)
+    if status:
+        q = q.filter(NoteTask.status == status)
+    else:
+        q = q.filter(NoteTask.status != "discovered")
+    return q.order_by(NoteTask.created_at.desc()).all()
+
+
+def get_discovered_tasks(db: Session, user_id: str) -> list[NoteTask]:
     return (
         db.query(NoteTask)
-        .filter(NoteTask.user_id == user_id, NoteTask.is_done == done)
+        .filter(NoteTask.user_id == user_id, NoteTask.status == "discovered")
         .order_by(NoteTask.created_at.desc())
         .all()
     )
+
+
+def confirm_task(db: Session, task_id: str, user_id: str) -> NoteTask | None:
+    task = db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user_id).first()
+    if task and task.status == "discovered":
+        task.status = "local"
+        db.commit()
+    return task
+
+
+def dismiss_task(db: Session, task_id: str, user_id: str) -> None:
+    db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user_id).delete()
+    db.commit()
+
+
+def set_task_status(db: Session, task_id: str, user_id: str, status: str) -> NoteTask | None:
+    task = db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user_id).first()
+    if task:
+        task.status = status
+        db.commit()
+    return task
 
 
 def mark_task_done(db: Session, task_id: str, user_id: str) -> NoteTask | None:

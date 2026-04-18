@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Install dependencies (layer-cached separately from source)
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev && uv run python -m spacy download en_core_web_sm
 
 # Copy source
 COPY . .

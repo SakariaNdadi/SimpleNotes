@@ -8,8 +8,10 @@ from app.search.hybrid import embed_and_index
 from app.auth.router import require_user
 from app.database import get_db
 from app.labels.service import get_labels
-from app.models import NoteHistory, User
+from app.models import CalendarToken, NoteHistory, User
 from app.notes import service
+from app.notes.nlp_extractor import extract_tasks
+from app.notes.task_service import save_tasks
 from app.preferences.service import get_or_create_prefs
 
 router = APIRouter(prefix="/notes")
@@ -54,10 +56,12 @@ async def create_note(
         return HTMLResponse('<p class="error">Note cannot be empty</p>', status_code=422)
     note = service.create_note(db, user.id, description.strip(), label_id or None)
     background_tasks.add_task(embed_and_index, note.id, user.id, note.description)
+    discovered = _nlp_discover(db, user.id, note.id, note.description)
     labels = get_labels(db, user.id)
+    providers = _connected_providers(db, user.id)
     return templates.TemplateResponse(
         "partials/note_timeline_item.html",
-        {"request": request, "note": note, "labels": labels},
+        {"request": request, "note": note, "labels": labels, "discovered_tasks": discovered, "providers": providers},
         headers={"HX-Trigger": "noteCreated"},
     )
 
@@ -159,9 +163,12 @@ async def update_note(
         db, note, description.strip(), label_id or None, max_history=prefs.max_edit_history
     )
     background_tasks.add_task(embed_and_index, note.id, user.id, note.description)
+    discovered = _nlp_discover(db, user.id, note.id, note.description)
     labels = get_labels(db, user.id)
+    providers = _connected_providers(db, user.id)
     return templates.TemplateResponse(
-        "partials/note_timeline_item.html", {"request": request, "note": note, "labels": labels}
+        "partials/note_timeline_item.html",
+        {"request": request, "note": note, "labels": labels, "discovered_tasks": discovered, "providers": providers}
     )
 
 
@@ -241,5 +248,19 @@ async def restore_from_history(
     background_tasks.add_task(embed_and_index, note.id, user.id, note.description)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
-        "partials/note_timeline_item.html", {"request": request, "note": note, "labels": labels}
+        "partials/note_timeline_item.html", {"request": request, "note": note, "labels": labels, "discovered_tasks": []}
     )
+
+
+def _connected_providers(db, user_id: str) -> list[str]:
+    return [t.provider for t in db.query(CalendarToken).filter(CalendarToken.user_id == user_id).all()]
+
+
+def _nlp_discover(db, user_id: str, note_id: str, text: str) -> list:
+    try:
+        tasks = extract_tasks(text)
+        if tasks:
+            return save_tasks(db, user_id, note_id, tasks, source="nlp", status="discovered")
+    except Exception:
+        pass
+    return []

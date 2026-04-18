@@ -56,7 +56,28 @@ app.include_router(preferences_router)
 async def on_startup():
     create_tables()
     # _apply_migrations()
+    _migrate_columns()
     _setup_search()
+
+
+def _migrate_columns() -> None:
+    from sqlalchemy import text
+    from app.database import engine
+    is_pg = not settings.DATABASE_URL.startswith("sqlite")
+    migrations = [
+        ("note_tasks", "status", "VARCHAR(20) NOT NULL DEFAULT 'local'", "TEXT NOT NULL DEFAULT 'local'"),
+        ("note_tasks", "source", "VARCHAR(10) NOT NULL DEFAULT 'llm'", "TEXT NOT NULL DEFAULT 'llm'"),
+    ]
+    with engine.connect() as conn:
+        for table, col, pg_def, sqlite_def in migrations:
+            try:
+                if is_pg:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {pg_def}"))
+                else:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {sqlite_def}"))
+            except Exception:
+                pass
+        conn.commit()
 
 
 def _setup_search() -> None:

@@ -10,18 +10,21 @@ class Base(DeclarativeBase):
 
 def _get_engine():
     settings = get_settings()
-    if settings.ENV == "dev" or settings.DATABASE_URL.startswith("sqlite"):
-        engine = create_engine(
-            settings.DATABASE_URL,
-            connect_args={"check_same_thread": False},
-        )
-        # Enable WAL mode for better SQLite concurrency
+    url = settings.DATABASE_URL
+    if url.startswith("sqlite"):
+        engine = create_engine(url, connect_args={"check_same_thread": False})
+
         @event.listens_for(engine, "connect")
         def set_wal(dbapi_conn, _):
             dbapi_conn.execute("PRAGMA journal_mode=WAL")
 
         return engine
-    return create_engine(settings.DATABASE_URL, pool_pre_ping=True)
+    # Normalise postgres URL to psycopg v3 driver
+    if url.startswith("postgresql://") or url.startswith("postgres://"):
+        url = url.replace("postgresql://", "postgresql+psycopg://", 1).replace(
+            "postgres://", "postgresql+psycopg://", 1
+        )
+    return create_engine(url, pool_pre_ping=True)
 
 
 engine = _get_engine()

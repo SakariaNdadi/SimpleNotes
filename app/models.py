@@ -158,6 +158,8 @@ class NoteTask(Base):
     task_type: Mapped[str] = mapped_column(String(20), default="task")
     due_datetime: Mapped[str | None] = mapped_column(String(50), nullable=True)
     is_done: Mapped[bool] = mapped_column(Boolean, default=False)
+    status: Mapped[str] = mapped_column(String(20), default="local", nullable=False)
+    source: Mapped[str] = mapped_column(String(10), default="llm", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     note: Mapped[Note] = relationship("Note", back_populates="tasks")

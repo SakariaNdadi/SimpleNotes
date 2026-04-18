@@ -95,6 +95,7 @@ async def create_task(
     description: str = Form(""),
     dt: str = Form(""),
     task_type: str = Form("task"),  # "task" | "event"
+    task_id: str = Form(""),
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
@@ -120,6 +121,10 @@ async def create_task(
                 ms_task(token, title, description, dt or None)
     except Exception as e:
         return HTMLResponse(f'<p class="error">Failed: {e}</p>', status_code=500)
+
+    if task_id:
+        from app.notes.task_service import set_task_status
+        set_task_status(db, task_id, user.id, provider)
 
     return HTMLResponse('<p class="success">Created successfully!</p>')
 

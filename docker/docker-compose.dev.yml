@@ -40,14 +40,17 @@ services:
       - MEILI_URL=http://meilisearch:7700
       - MEILI_KEY=${MEILI_KEY:-devmasterkey}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL:-}
+      - UV_PYTHON=python3.13
     env_file:
       - ../.env
     ports:
       - "8000:8000"
     volumes:
       - ../:/app
+      - venv_dev:/app/.venv
     command: uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 volumes:
   postgres_data_dev:
   meili_data_dev:
+  venv_dev:

@@ -78,5 +78,8 @@
 
         <div id="summary-{{ note.id }}"></div>
         <div id="history-panel-{{ note.id }}" class="mt-1"></div>
+        {% if discovered_tasks is defined %}
+        {% include "partials/nlp_task_prompt.html" %}
+        {% endif %}
     </div>
 </div>
