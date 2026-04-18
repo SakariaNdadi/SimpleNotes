@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, Form, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -63,6 +63,31 @@ async def create_note(
         "partials/note_timeline_item.html",
         {"request": request, "note": note, "labels": labels, "discovered_tasks": discovered, "providers": providers},
         headers={"HX-Trigger": "noteCreated"},
+    )
+
+
+@router.post("/search", response_class=HTMLResponse)
+async def search_notes_local(
+    request: Request,
+    query: str = Form(...),
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    from app.labels.service import get_labels
+    results = service.search_notes(db, user.id, query.strip()) if query.strip() else []
+    labels = get_labels(db, user.id)
+    return templates.TemplateResponse(
+        "partials/note_list.html",
+        {
+            "request": request,
+            "notes": results,
+            "labels": labels,
+            "next_offset": 0,
+            "has_more": False,
+            "label_id": "",
+            "is_search": True,
+            "is_ai_search": False,
+        },
     )
 
 

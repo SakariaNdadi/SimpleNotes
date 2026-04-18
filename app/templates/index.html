@@ -173,10 +173,11 @@
                 </svg>
             </button>
 
-            <form
+            <form id="search-form"
                 class="flex-1 flex items-center gap-2 bg-surface2 border border-transparent focus-within:border-[color:var(--accent)] focus-within:bg-surface rounded px-2.5 py-1.5 transition-all"
-                hx-post="/ai/search" hx-target="#note-feed" hx-swap="innerHTML" hx-indicator="#search-indicator"
+                hx-post="/notes/search" hx-target="#note-feed" hx-swap="innerHTML" hx-indicator="#search-indicator"
                 hx-trigger="input changed delay:350ms from:[name='query'], submit" @submit.prevent
+                @htmx:configRequest="$event.detail.path = aiSearch ? '/ai/search' : '/notes/search'"
                 @input="if (!searchQuery) { searchActive = false; htmx.ajax('GET', '/notes?label_id=' + activeLabelId, { target: '#note-feed', swap: 'innerHTML' }) } else { searchActive = true }">
                 <svg class="w-3.5 h-3.5 text-muted flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -184,9 +185,18 @@
                 </svg>
                 <input type="text" name="query" placeholder="Search notes..." x-model="searchQuery"
                     class="flex-1 bg-transparent text-[13px] text-primary placeholder-[color:var(--text-3)] outline-none" />
-                <span id="search-indicator" class="htmx-indicator text-muted text-[11px] items-center gap-1">
-                    <span class="spinner w-3 h-3 border-2"></span>Searching...
+                <span id="search-indicator" class="htmx-indicator text-muted text-[11px] flex items-center gap-1">
+                    <span class="spinner w-3 h-3 border-2"></span>
                 </span>
+                <button type="button" @click="aiSearch = !aiSearch"
+                    :title="aiSearch ? 'AI search on — click to use local search' : 'Local search — click to enable AI search'"
+                    class="flex-shrink-0 transition-colors"
+                    :class="aiSearch ? 'text-[color:var(--accent)]' : 'text-muted hover:text-primary'">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                </button>
             </form>
 
             <button x-show="searchActive" x-cloak @click="clearSearch()"
@@ -222,7 +232,9 @@
         <div x-show="composerOpen" x-transition x-cloak class="px-4 pt-4 pb-0 max-w-2xl w-full mx-auto relative z-0">
             <form
                 class="bg-surface border border-accent rounded shadow-sm overflow-hidden focus-within:ring-1 focus-within:ring-accent transition-shadow"
-                hx-post="/notes" hx-target="#note-feed" hx-swap="afterbegin" hx-on::after-request="closeComposer()"
+                hx-post="/notes" hx-target="#note-feed" hx-swap="afterbegin"
+                hx-on::before-request="document.getElementById('note-feed').insertAdjacentHTML('afterbegin', '<div id=\'note-skeleton\' class=\'animate-pulse flex gap-2.5 pb-1 px-1 mb-2\'><div class=\'w-2 h-2 rounded-full bg-surface2 mt-1.5 flex-shrink-0\'></div><div class=\'flex-1 space-y-1.5 py-0.5\'><div class=\'h-2 bg-surface2 rounded w-3/4\'></div><div class=\'h-2 bg-surface2 rounded w-1/2\'></div></div></div>')"
+                hx-on::after-request="document.getElementById('note-skeleton')?.remove(); closeComposer(); this.reset()"
                 @keydown.ctrl.enter="$el.requestSubmit()" @keydown.meta.enter="$el.requestSubmit()">
                 <textarea name="description" rows="3" required x-ref="composerTA"
                     placeholder="Write a note... (Ctrl+Enter to save)"
@@ -305,6 +317,7 @@
             composerOpen: false,
             searchQuery: '',
             searchActive: false,
+            aiSearch: false,
             activeLabelId: '',
             settingsPanel: null,
 

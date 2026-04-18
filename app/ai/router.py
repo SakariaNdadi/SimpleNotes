@@ -155,6 +155,7 @@ async def ai_search(
             "has_more": False,
             "label_id": "",
             "is_search": True,
+            "is_ai_search": True,
         },
     )
 
