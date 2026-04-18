@@ -26,6 +26,7 @@ dependencies = [
     "aiofiles>=23.2.1",
     "pydantic-settings>=2.13.1",
     "itsdangerous>=2.2.0",
+    "psycopg[binary,pool]>=3.3.3",
 ]
 
 [dependency-groups]
@@ -33,5 +34,5 @@ dev = [
     "ruff>=0.4.0",
 ]
 prod = [
-    "psycopg2-binary>=2.9.9",
+    "psycopg[binary,pool]>=3.3.3",
 ]
