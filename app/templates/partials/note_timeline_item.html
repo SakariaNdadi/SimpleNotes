@@ -40,15 +40,19 @@
 
         <div
             class="flex items-center gap-0.5 max-h-0 overflow-hidden opacity-0 group-hover:max-h-8 group-hover:mt-1 group-hover:opacity-100 transition-all duration-200">
-            <button title="AI summary" hx-post="/ai/summary/{{ note.id }}" hx-target="#summary-{{ note.id }}"
-                hx-swap="innerHTML" hx-indicator="#sum-ind-{{ note.id }}"
-                class="p-1 text-muted hover:text-[color:var(--accent)] rounded hover:bg-[color:var(--surface2)] transition-colors">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-            </button>
-            <span id="sum-ind-{{ note.id }}" class="htmx-indicator"><span class="spinner"></span></span>
+            <template x-if="$store.app.aiEnabled">
+              <span class="inline-flex items-center gap-0.5">
+                <button title="AI summary" hx-post="/ai/summary/{{ note.id }}" hx-target="#summary-{{ note.id }}"
+                    hx-swap="innerHTML" hx-indicator="#sum-ind-{{ note.id }}"
+                    class="p-1 text-muted hover:text-[color:var(--accent)] rounded hover:bg-[color:var(--surface2)] transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </button>
+                <span id="sum-ind-{{ note.id }}" class="htmx-indicator"><span class="spinner"></span></span>
+              </span>
+            </template>
 
             <button title="Edit" hx-get="/notes/{{ note.id }}/edit" hx-target="#note-{{ note.id }}" hx-swap="outerHTML"
                 class="p-1 text-muted hover:text-primary rounded hover:bg-[color:var(--surface2)] transition-colors">
