@@ -8,7 +8,10 @@ from app.auth.router import require_user
 from app.auth.utils import encrypt_value
 from app.database import get_db
 from app.models import User, UserLLMConfig
-from app.notes.service import get_notes
+from app.notes.service import get_notes, search_notes
+from app.notes.summary_service import delete_summary, get_summary, save_summary
+from app.notes.task_service import save_tasks
+from app.preferences.service import get_languages, get_or_create_prefs
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -34,7 +37,6 @@ async def add_llm_config(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    # Deactivate all existing configs for this user
     db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).update({"is_active": False})
     config = UserLLMConfig(
         user_id=user.id,
@@ -98,10 +100,37 @@ async def summarize_note(
     note = get_note(db, note_id, user.id)
     if not note:
         return HTMLResponse("Not found", status_code=404)
-    summary = await ai_service.summarize_note(db, user.id, note.description)
+
+    prefs = get_or_create_prefs(db, user.id)
+
+    if prefs.save_ai_summaries:
+        existing = get_summary(db, note_id, user.id)
+        if existing:
+            return templates.TemplateResponse(
+                "partials/ai_summary.html",
+                {"request": request, "summary": existing.content, "note_id": note_id, "saved": True},
+            )
+
+    langs = get_languages(prefs)
+    summary = await ai_service.summarize_note(db, user.id, note.description, languages=langs)
+
+    if prefs.save_ai_summaries:
+        save_summary(db, note_id, user.id, summary)
+
     return templates.TemplateResponse(
-        "partials/ai_summary.html", {"request": request, "summary": summary, "note_id": note_id}
+        "partials/ai_summary.html",
+        {"request": request, "summary": summary, "note_id": note_id, "saved": prefs.save_ai_summaries},
     )
+
+
+@router.delete("/ai/summary/{note_id}", response_class=HTMLResponse)
+async def remove_summary(
+    note_id: str,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    delete_summary(db, note_id, user.id)
+    return HTMLResponse("")
 
 
 @router.post("/ai/search", response_class=HTMLResponse)
@@ -111,9 +140,21 @@ async def ai_search(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    all_notes = get_notes(db, user.id, limit=100)
-    results = await ai_service.semantic_search(db, user.id, query, all_notes)
     from app.labels.service import get_labels
+
+    prefs = get_or_create_prefs(db, user.id)
+    langs = get_languages(prefs)
+
+    has_llm = db.query(UserLLMConfig).filter(
+        UserLLMConfig.user_id == user.id, UserLLMConfig.is_active == True  # noqa: E712
+    ).first()
+
+    if has_llm:
+        all_notes = get_notes(db, user.id, limit=200)
+        results = await ai_service.semantic_search(db, user.id, query, all_notes, languages=langs)
+    else:
+        results = search_notes(db, user.id, query)
+
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
         "partials/note_list.html",
@@ -143,10 +184,12 @@ async def detect_tasks(
     tasks = await ai_service.detect_tasks(db, user.id, note.description)
     if not tasks:
         return HTMLResponse("")
+    save_tasks(db, user.id, note_id, tasks)
     from app.models import CalendarToken
     connected = db.query(CalendarToken).filter(CalendarToken.user_id == user.id).all()
     providers = [t.provider for t in connected]
     return templates.TemplateResponse(
         "partials/task_prompt.html",
         {"request": request, "tasks": tasks, "note_id": note_id, "providers": providers},
+        headers={"HX-Trigger": "taskCountChanged"},
     )
