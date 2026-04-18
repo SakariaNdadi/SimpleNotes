@@ -149,11 +149,16 @@ async def update_task_route(
     title: str = Form(...),
     description: str = Form(""),
     due_datetime: str = Form(""),
+    end_datetime: str = Form(""),
+    is_all_day: str = Form(""),
     task_type: str = Form("task"),
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    task = update_task(db, task_id, user.id, title, description, due_datetime, task_type)
+    task = update_task(
+        db, task_id, user.id, title, description,
+        due_datetime or None, end_datetime or None, bool(is_all_day), task_type,
+    )
     if not task:
         return HTMLResponse("Not found", status_code=404)
     providers = [

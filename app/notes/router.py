@@ -49,12 +49,20 @@ async def create_note(
     background_tasks: BackgroundTasks,
     description: str = Form(...),
     label_id: str = Form(""),
+    start_datetime: str = Form(""),
+    end_datetime: str = Form(""),
+    is_all_day: str = Form(""),
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
     if not description.strip():
         return HTMLResponse('<p class="error">Note cannot be empty</p>', status_code=422)
-    note = service.create_note(db, user.id, description.strip(), label_id or None)
+    note = service.create_note(
+        db, user.id, description.strip(), label_id or None,
+        start_datetime=start_datetime or None,
+        end_datetime=end_datetime or None,
+        is_all_day=bool(is_all_day),
+    )
     background_tasks.add_task(embed_and_index, note.id, user.id, note.description)
     discovered = _nlp_discover(db, user.id, note.id, note.description)
     labels = get_labels(db, user.id)
@@ -175,6 +183,9 @@ async def update_note(
     background_tasks: BackgroundTasks,
     description: str = Form(...),
     label_id: str = Form(""),
+    start_datetime: str = Form(""),
+    end_datetime: str = Form(""),
+    is_all_day: str = Form(""),
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
@@ -185,7 +196,10 @@ async def update_note(
         return HTMLResponse('<p class="error">Note cannot be empty</p>', status_code=422)
     prefs = get_or_create_prefs(db, user.id)
     note = service.update_note(
-        db, note, description.strip(), label_id or None, max_history=prefs.max_edit_history
+        db, note, description.strip(), label_id or None, max_history=prefs.max_edit_history,
+        start_datetime=start_datetime or None,
+        end_datetime=end_datetime or None,
+        is_all_day=bool(is_all_day),
     )
     background_tasks.add_task(embed_and_index, note.id, user.id, note.description)
     discovered = _nlp_discover(db, user.id, note.id, note.description)

@@ -37,8 +37,23 @@ def get_note_any(db: Session, note_id: str, user_id: str) -> Note | None:
     return db.query(Note).filter(Note.id == note_id, Note.user_id == user_id).first()
 
 
-def create_note(db: Session, user_id: str, description: str, label_id: str | None = None) -> Note:
-    note = Note(user_id=user_id, description=description, label_id=label_id or None)
+def create_note(
+    db: Session,
+    user_id: str,
+    description: str,
+    label_id: str | None = None,
+    start_datetime: str | None = None,
+    end_datetime: str | None = None,
+    is_all_day: bool = False,
+) -> Note:
+    note = Note(
+        user_id=user_id,
+        description=description,
+        label_id=label_id or None,
+        start_datetime=start_datetime or None,
+        end_datetime=end_datetime or None,
+        is_all_day=is_all_day,
+    )
     db.add(note)
     db.commit()
     db.refresh(note)
@@ -72,6 +87,9 @@ def update_note(
     description: str,
     label_id: str | None = None,
     max_history: int = 3,
+    start_datetime: str | None = None,
+    end_datetime: str | None = None,
+    is_all_day: bool = False,
 ) -> Note:
     if note.description != description and max_history > 0:
         _save_history(db, note, max_history)
@@ -79,6 +97,9 @@ def update_note(
     note.label_id = label_id or None
     note.is_edited = True
     note.updated_at = datetime.now(timezone.utc)
+    note.start_datetime = start_datetime or None
+    note.end_datetime = end_datetime or None
+    note.is_all_day = is_all_day
     db.commit()
     db.refresh(note)
     return note

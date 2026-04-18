@@ -243,18 +243,49 @@
                 <textarea name="description" rows="3" required x-ref="composerTA"
                     placeholder="Write a note... (Ctrl+Enter to save)"
                     class="input-base w-full px-3 pt-2.5 pb-1 text-[13px] leading-snug resize-none border-0 focus:ring-0 bg-transparent"></textarea>
-                <div class="flex items-center justify-between px-2 py-1.5 border-t border-base bg-surface2">
-                    <select name="label_id"
-                        class="input-base text-[11px] px-1.5 py-0.5 rounded border text-secondary bg-surface cursor-pointer outline-none focus:border-accent">
-                        <option value="">No label</option>
-                        {% for label in labels %}
-                        <option value="{{ label.id }}">{{ label.title }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="flex items-center gap-1.5">
-                        <button type="button" @click="closeComposer()"
-                            class="text-[11px] text-secondary hover:text-primary px-2.5 py-1 rounded transition-colors">Cancel</button>
-                        <button type="submit" class="btn-accent text-[11px] font-medium px-3 py-1 rounded">Save</button>
+                <div x-data="{ schedOpen: false, allDay: false }" class="border-t border-base">
+                    <div class="flex items-center justify-between px-2 py-1.5 bg-surface2">
+                        <div class="flex items-center gap-1.5">
+                            <select name="label_id"
+                                class="input-base text-[11px] px-1.5 py-0.5 rounded border text-secondary bg-surface cursor-pointer outline-none focus:border-accent">
+                                <option value="">No label</option>
+                                {% for label in labels %}
+                                <option value="{{ label.id }}">{{ label.title }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" @click="schedOpen = !schedOpen"
+                                :class="schedOpen ? 'text-[color:var(--accent)] border-[color:var(--accent)]/40 bg-[color:var(--accent)]/5' : 'text-muted border-base hover:text-primary'"
+                                class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded border transition-colors">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                Schedule
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" @click="closeComposer()"
+                                class="text-[11px] text-secondary hover:text-primary px-2.5 py-1 rounded transition-colors">Cancel</button>
+                            <button type="submit" class="btn-accent text-[11px] font-medium px-3 py-1 rounded">Save</button>
+                        </div>
+                    </div>
+                    <div x-show="schedOpen" x-transition class="px-2 pb-2 bg-surface2 space-y-1.5">
+                        <label class="flex items-center gap-1.5 text-[11px] text-secondary cursor-pointer">
+                            <input type="checkbox" name="is_all_day" x-model="allDay" value="1"
+                                class="rounded border-base accent-[color:var(--accent)]" />
+                            All day
+                        </label>
+                        <div class="flex gap-1.5">
+                            <div class="flex-1">
+                                <label class="block text-[10px] text-muted mb-0.5">Start</label>
+                                <input :type="allDay ? 'date' : 'datetime-local'" name="start_datetime"
+                                    class="input-base w-full text-[11px] px-2 py-1 rounded border bg-surface outline-none focus:border-[color:var(--accent)]" />
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-[10px] text-muted mb-0.5">End</label>
+                                <input :type="allDay ? 'date' : 'datetime-local'" name="end_datetime"
+                                    class="input-base w-full text-[11px] px-2 py-1 rounded border bg-surface outline-none focus:border-[color:var(--accent)]" />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </form>

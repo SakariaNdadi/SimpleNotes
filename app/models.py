@@ -94,6 +94,9 @@ class Note(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    start_datetime: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    end_datetime: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    is_all_day: Mapped[bool] = mapped_column(Boolean, default=False)
 
     user: Mapped[User] = relationship("User", back_populates="notes")
     label: Mapped[Label | None] = relationship("Label", back_populates="notes")
@@ -157,6 +160,8 @@ class NoteTask(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     task_type: Mapped[str] = mapped_column(String(20), default="task")
     due_datetime: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    end_datetime: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    is_all_day: Mapped[bool] = mapped_column(Boolean, default=False)
     is_done: Mapped[bool] = mapped_column(Boolean, default=False)
     status: Mapped[str] = mapped_column(String(20), default="local", nullable=False)
     source: Mapped[str] = mapped_column(String(10), default="llm", nullable=False)

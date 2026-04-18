@@ -77,13 +77,27 @@ def _get_creds(token: CalendarToken) -> Credentials:
     )
 
 
-def create_calendar_event(token: CalendarToken, title: str, description: str, dt: str | None) -> dict:
+def create_calendar_event(
+    token: CalendarToken,
+    title: str,
+    description: str,
+    dt: str | None,
+    end_dt: str | None = None,
+    is_all_day: bool = False,
+) -> dict:
+    from datetime import timedelta
     creds = _get_creds(token)
     service = build("calendar", "v3", credentials=creds)
     event = {"summary": title, "description": description}
-    if dt:
+    if is_all_day:
+        start_date = dt[:10] if dt else datetime.now(timezone.utc).date().isoformat()
+        end_date = end_dt[:10] if end_dt else start_date
+        event["start"] = {"date": start_date}
+        event["end"] = {"date": end_date}
+    elif dt:
+        end = end_dt or (datetime.fromisoformat(dt) + timedelta(hours=1)).isoformat()
         event["start"] = {"dateTime": dt, "timeZone": "UTC"}
-        event["end"] = {"dateTime": dt, "timeZone": "UTC"}
+        event["end"] = {"dateTime": end, "timeZone": "UTC"}
     else:
         today = datetime.now(timezone.utc).date().isoformat()
         event["start"] = {"date": today}

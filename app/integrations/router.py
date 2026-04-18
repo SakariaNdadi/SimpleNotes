@@ -94,6 +94,8 @@ async def create_task(
     title: str = Form(...),
     description: str = Form(""),
     dt: str = Form(""),
+    end_dt: str = Form(""),
+    is_all_day: str = Form(""),
     task_type: str = Form("task"),  # "task" | "event"
     task_id: str = Form(""),
     user: User = Depends(require_user),
@@ -106,17 +108,18 @@ async def create_task(
     if not token:
         return HTMLResponse(f'<p class="error">{provider} not connected</p>', status_code=400)
 
+    all_day = bool(is_all_day)
     try:
         if provider == "google":
             from app.integrations.google import create_calendar_event, create_task as g_task
             if task_type == "event":
-                create_calendar_event(token, title, description, dt or None)
+                create_calendar_event(token, title, description, dt or None, end_dt or None, all_day)
             else:
                 g_task(token, title, description, dt or None)
         elif provider == "microsoft":
             from app.integrations.microsoft import create_calendar_event as ms_event, create_task as ms_task
             if task_type == "event":
-                ms_event(token, title, description, dt or None)
+                ms_event(token, title, description, dt or None, end_dt or None, all_day)
             else:
                 ms_task(token, title, description, dt or None)
     except Exception as e:

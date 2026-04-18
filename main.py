@@ -67,6 +67,11 @@ def _migrate_columns() -> None:
     migrations = [
         ("note_tasks", "status", "VARCHAR(20) NOT NULL DEFAULT 'local'", "TEXT NOT NULL DEFAULT 'local'"),
         ("note_tasks", "source", "VARCHAR(10) NOT NULL DEFAULT 'llm'", "TEXT NOT NULL DEFAULT 'llm'"),
+        ("note_tasks", "end_datetime", "VARCHAR(50)", "TEXT"),
+        ("note_tasks", "is_all_day", "BOOLEAN NOT NULL DEFAULT FALSE", "INTEGER NOT NULL DEFAULT 0"),
+        ("notes", "start_datetime", "VARCHAR(50)", "TEXT"),
+        ("notes", "end_datetime", "VARCHAR(50)", "TEXT"),
+        ("notes", "is_all_day", "BOOLEAN NOT NULL DEFAULT FALSE", "INTEGER NOT NULL DEFAULT 0"),
     ]
     with engine.connect() as conn:
         for table, col, pg_def, sqlite_def in migrations:

@@ -23,6 +23,8 @@ def save_tasks(
             description=t.get("description", ""),
             task_type=t.get("type", "task"),
             due_datetime=t.get("datetime"),
+            end_datetime=t.get("end_datetime"),
+            is_all_day=t.get("is_all_day", False),
             source=source,
             status=status,
         )
@@ -99,6 +101,8 @@ def update_task(
     title: str,
     description: str,
     due_datetime: str | None,
+    end_datetime: str | None,
+    is_all_day: bool,
     task_type: str,
 ) -> NoteTask | None:
     task = db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user_id).first()
@@ -106,6 +110,8 @@ def update_task(
         task.title = title[:500]
         task.description = description
         task.due_datetime = due_datetime or None
+        task.end_datetime = end_datetime or None
+        task.is_all_day = is_all_day
         task.task_type = task_type
         db.commit()
     return task

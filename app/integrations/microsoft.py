@@ -54,16 +54,34 @@ def _headers(token: CalendarToken) -> dict:
     return {"Authorization": f"Bearer {access}", "Content-Type": "application/json"}
 
 
-def create_calendar_event(token: CalendarToken, title: str, description: str, dt: str | None) -> dict:
+def create_calendar_event(
+    token: CalendarToken,
+    title: str,
+    description: str,
+    dt: str | None,
+    end_dt: str | None = None,
+    is_all_day: bool = False,
+) -> dict:
     from datetime import datetime, timedelta, timezone
-    start = dt or datetime.now(timezone.utc).isoformat()
-    end_dt = (datetime.fromisoformat(start) + timedelta(hours=1)).isoformat()
-    body = {
-        "subject": title,
-        "body": {"contentType": "text", "content": description},
-        "start": {"dateTime": start, "timeZone": "UTC"},
-        "end": {"dateTime": end_dt, "timeZone": "UTC"},
-    }
+    if is_all_day:
+        start_date = dt[:10] if dt else datetime.now(timezone.utc).date().isoformat()
+        end_date = end_dt[:10] if end_dt else start_date
+        body = {
+            "subject": title,
+            "body": {"contentType": "text", "content": description},
+            "isAllDay": True,
+            "start": {"dateTime": f"{start_date}T00:00:00", "timeZone": "UTC"},
+            "end": {"dateTime": f"{end_date}T00:00:00", "timeZone": "UTC"},
+        }
+    else:
+        start = dt or datetime.now(timezone.utc).isoformat()
+        end = end_dt or (datetime.fromisoformat(start) + timedelta(hours=1)).isoformat()
+        body = {
+            "subject": title,
+            "body": {"contentType": "text", "content": description},
+            "start": {"dateTime": start, "timeZone": "UTC"},
+            "end": {"dateTime": end, "timeZone": "UTC"},
+        }
     with httpx.Client() as client:
         resp = client.post(
             "https://graph.microsoft.com/v1.0/me/events",
