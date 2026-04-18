@@ -2,7 +2,6 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -10,7 +9,7 @@ from app.ai.router import router as ai_router
 from app.auth.profile_router import router as profile_router
 from app.auth.router import get_current_user, router as auth_router
 from app.config import get_settings
-from app.database import create_tables, engine, get_db
+from app.database import create_tables, get_db
 from app.integrations.panel_router import router as integrations_panel_router
 from app.integrations.router import router as integrations_router
 from app.labels.router import router as labels_router
