@@ -23,12 +23,13 @@ async def create_label(
     request: Request,
     title: str = Form(...),
     description: str = Form(""),
+    color: str = Form(""),
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
     if not title.strip():
         return HTMLResponse('<p class="error">Title is required</p>', status_code=422)
-    result = service.create_label(db, user.id, title, description)
+    result = service.create_label(db, user.id, title, description, color)
     if isinstance(result, str):
         return HTMLResponse(f'<p class="error">{result}</p>', status_code=422)
     labels = service.get_labels(db, user.id)
@@ -41,6 +42,7 @@ async def update_label(
     label_id: str,
     title: str = Form(...),
     description: str = Form(""),
+    color: str = Form(""),
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
@@ -49,7 +51,7 @@ async def update_label(
         return HTMLResponse("Not found", status_code=404)
     if not title.strip():
         return HTMLResponse('<p class="error">Title is required</p>', status_code=422)
-    result = service.update_label(db, label, title, description)
+    result = service.update_label(db, label, title, description, color)
     if isinstance(result, str):
         return HTMLResponse(f'<p class="error">{result}</p>', status_code=422)
     return templates.TemplateResponse("partials/label_item.html", {"request": request, "label": result})

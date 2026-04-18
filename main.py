@@ -72,6 +72,7 @@ def _migrate_columns() -> None:
         ("notes", "start_datetime", "VARCHAR(50)", "TEXT"),
         ("notes", "end_datetime", "VARCHAR(50)", "TEXT"),
         ("notes", "is_all_day", "BOOLEAN NOT NULL DEFAULT FALSE", "INTEGER NOT NULL DEFAULT 0"),
+        ("labels", "color", "VARCHAR(7) NOT NULL DEFAULT ''", "TEXT NOT NULL DEFAULT ''"),
     ]
     with engine.connect() as conn:
         for table, col, pg_def, sqlite_def in migrations:

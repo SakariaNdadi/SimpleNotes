@@ -11,8 +11,10 @@
         <div class="flex items-start justify-between gap-2 mb-0.5">
             <div class="flex items-center gap-1.5 flex-wrap min-w-0">
                 {% if note.label %}
-                <span
-                    class="bg-tag text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0">{{ note.label.title }}</span>
+                <span class="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0 bg-tag">
+                  {% if note.label.color %}<span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background:{{ note.label.color }}"></span>{% endif %}
+                  {{ note.label.title }}
+                </span>
                 {% endif %}
                 {% if note.is_edited %}
                 <span class="bg-edited text-[10px] px-1.5 py-0.5 rounded shrink-0"

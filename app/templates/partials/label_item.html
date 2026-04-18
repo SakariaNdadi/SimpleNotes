@@ -2,16 +2,21 @@
 
   <!-- Normal view -->
   <div x-show="!editing" class="flex items-center px-3 py-0.5">
-    <button class="flex-1 text-left text-sm py-1.5 rounded-lg flex flex-col gap-0.5 hover:bg-surface2 px-2 transition-colors"
+    <button class="flex-1 text-left text-sm py-1.5 rounded-lg flex items-center gap-2 hover:bg-surface2 px-2 transition-colors"
             :class="$store.app && $store.app.activeLabelId === '{{ label.id }}' ? 'label-active' : 'text-secondary'"
             hx-get="/notes?label_id={{ label.id }}"
             hx-target="#note-feed"
             hx-swap="innerHTML"
             @click="if($store.app) $store.app.activeLabelId = '{{ label.id }}'">
-      <span class="font-medium leading-tight">{{ label.title }}</span>
-      {% if label.description %}
-      <span class="text-[11px] text-muted leading-tight">{{ label.description }}</span>
+      {% if label.color %}
+      <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:{{ label.color }}"></span>
       {% endif %}
+      <span class="flex flex-col gap-0.5 min-w-0">
+        <span class="font-medium leading-tight">{{ label.title }}</span>
+        {% if label.description %}
+        <span class="text-[11px] text-muted leading-tight">{{ label.description }}</span>
+        {% endif %}
+      </span>
     </button>
     <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
       <button @click="editing = true"
@@ -40,6 +45,11 @@
            class="input-base w-full text-sm px-3 py-1.5 rounded-md border" autofocus />
     <input type="text" name="description" value="{{ label.description }}" placeholder="Description"
            class="input-base w-full text-sm px-3 py-1.5 rounded-md border" />
+    <div class="flex items-center gap-1.5">
+      <input type="color" name="color" value="{{ label.color or '#6366f1' }}"
+             class="w-6 h-6 rounded cursor-pointer border border-base bg-transparent p-0.5 flex-shrink-0" />
+      <span class="text-[10px] text-muted">Color</span>
+    </div>
     <div class="flex gap-2">
       <button type="submit" class="btn-accent text-xs px-3 py-1.5 rounded-md font-medium">Save</button>
       <button type="button" @click="editing = false"

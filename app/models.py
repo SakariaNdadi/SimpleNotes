@@ -74,6 +74,7 @@ class Label(Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(String(255), default="")
+    color: Mapped[str] = mapped_column(String(7), default="")
 
     user: Mapped[User] = relationship("User", back_populates="labels")
     notes: Mapped[list[Note]] = relationship("Note", back_populates="label")
