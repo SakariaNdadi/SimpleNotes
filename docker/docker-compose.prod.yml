@@ -45,6 +45,20 @@ services:
       - "8000"
     restart: unless-stopped
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin-prod
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-changeme}
+    depends_on:
+      - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    restart: unless-stopped
+
   nginx:
     image: nginx:alpine
     ports:
@@ -61,3 +75,4 @@ volumes:
   postgres_data:
   nginx_certs:
   meili_data:
+  pgadmin_data:
