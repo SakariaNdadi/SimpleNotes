@@ -8,8 +8,8 @@ Configure your LLM in Settings → AI / LLM after logging in.
 | Provider | Provider name | Model example | Base URL |
 |----------|--------------|---------------|----------|
 | OpenAI | `openai` | `gpt-4o` | *(leave empty)* |
-| Anthropic | `anthropic` | `claude-3-5-sonnet-20241022` | *(leave empty)* |
-| Google Gemini | `gemini` | `gemini/gemini-1.5-pro` | *(leave empty)* |
+| Anthropic | `anthropic` | `claude-sonnet-4-6` | *(leave empty)* |
+| Google Gemini | `gemini` | `gemini/gemini-2.0-flash` | *(leave empty)* |
 | Mistral | `mistral` | `mistral/mistral-large-latest` | *(leave empty)* |
 | Cohere | `cohere` | `command-r-plus` | *(leave empty)* |
 

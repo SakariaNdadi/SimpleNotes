@@ -29,8 +29,6 @@ uv run uvicorn main:app --reload
 
 Visit http://localhost:8000
 
-**Email verification in dev:** Links are printed to the server console — no SMTP needed.
-
 ## Production Setup
 
 ### Requirements
@@ -44,12 +42,14 @@ Visit http://localhost:8000
 # 1. Fill .env with production values (see docs/env.md)
 # 2. Generate SECRET_KEY: openssl rand -hex 32
 # 3. Generate FERNET_KEY (see above)
-# 4. Configure SMTP for real email sending
+# 4. Configure SMTP if you want password reset emails
 # 5. Configure Google/Microsoft OAuth if using integrations
 
 cd docker
 docker compose -f docker-compose.prod.yml up -d
 ```
+
+pgAdmin is available at `http://your-server:5050`. Set `PGADMIN_EMAIL` and `PGADMIN_PASSWORD` in `.env`.
 
 ### Enabling HTTPS
 

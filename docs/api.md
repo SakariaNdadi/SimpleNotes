@@ -7,11 +7,11 @@ Interactive docs available at `/api/docs` when running the server.
 | Method | Path | Body | Description |
 |--------|------|------|-------------|
 | GET | `/register` | — | Register page |
-| POST | `/register` | `username, email, password, confirm_password` | Create account |
+| POST | `/register` | `username, email, password, confirm_password` | Create account (no verification email sent) |
 | GET | `/login` | — | Login page |
 | POST | `/login` | `username, password` | Login → sets JWT cookie |
 | POST | `/logout` | — | Clear cookie |
-| GET | `/verify-email/{token}` | — | Verify email |
+| GET | `/verify-email/{token}` | — | Verify email (endpoint exists, not triggered on signup) |
 | GET/POST | `/forgot-password` | `email` | Request password reset |
 | GET/POST | `/reset-password/{token}` | `password, confirm_password` | Reset password |
 | GET/POST | `/profile` | `username, email, current_password, new_password?` | Update profile |
@@ -22,9 +22,18 @@ Interactive docs available at `/api/docs` when running the server.
 |--------|------|-------------|
 | GET | `/notes?offset=N&label_id=X` | Paginated list (HTMX partial) |
 | POST | `/notes` | Create note |
+| POST | `/notes/search` | Search notes |
+| GET | `/notes/trash` | Trashed notes |
+| GET | `/notes/archive` | Archived notes |
+| GET | `/notes/{id}` | View note |
 | GET | `/notes/{id}/edit` | Edit form partial |
 | PUT | `/notes/{id}` | Update note |
-| DELETE | `/notes/{id}` | Delete note |
+| POST | `/notes/{id}/archive` | Archive note |
+| POST | `/notes/{id}/restore` | Restore from trash/archive |
+| DELETE | `/notes/{id}` | Soft delete (trash) |
+| DELETE | `/notes/{id}/permanent` | Permanently delete |
+| GET | `/notes/{id}/history` | Version history |
+| POST | `/notes/{id}/history/{history_id}/restore` | Restore version |
 
 ## Labels
 
@@ -41,6 +50,7 @@ Interactive docs available at `/api/docs` when running the server.
 |--------|------|-------------|
 | POST | `/ai/search` | Semantic search (body: `query`) |
 | POST | `/ai/summary/{note_id}` | Summarize note |
+| DELETE | `/ai/summary/{note_id}` | Remove summary |
 | POST | `/ai/detect-tasks/{note_id}` | Detect tasks/reminders |
 
 ## LLM Settings
@@ -51,6 +61,32 @@ Interactive docs available at `/api/docs` when running the server.
 | POST | `/settings/llm` | Add config |
 | POST | `/settings/llm/{id}/activate` | Set active |
 | DELETE | `/settings/llm/{id}` | Remove config |
+
+## Tasks
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/tasks` | List tasks |
+| GET | `/tasks/count` | Pending task count (HTMX badge) |
+| GET | `/tasks/{id}/edit` | Edit task form |
+| PUT | `/tasks/{id}` | Update task |
+| POST | `/tasks/{id}/confirm` | Confirm detected task |
+| POST | `/tasks/{id}/done` | Mark done |
+| POST | `/tasks/{id}/undone` | Mark undone |
+| POST | `/tasks/{id}/status` | Toggle status |
+| DELETE | `/tasks/{id}/dismiss` | Dismiss task |
+| DELETE | `/tasks/{id}` | Delete task |
+
+## Preferences
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/preferences` | Preferences page |
+| POST | `/preferences/font` | Set font |
+| POST | `/preferences/palette` | Set color palette |
+| POST | `/preferences/ai-summary-toggle` | Toggle AI summary |
+| POST | `/preferences/history-depth` | Set history depth |
+| POST | `/preferences/languages` | Set languages |
 
 ## Integrations
 
