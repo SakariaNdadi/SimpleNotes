@@ -38,56 +38,15 @@ app.include_router(tasks_router)
 app.include_router(preferences_router)
 
 
-# def _apply_migrations():
-#     with engine.connect() as conn:
-#         existing = {row[1] for row in conn.execute(text("PRAGMA table_info(notes)"))}
-#         new_cols = {
-#             "is_deleted": "INTEGER NOT NULL DEFAULT 0",
-#             "deleted_at": "DATETIME",
-#             "is_archived": "INTEGER NOT NULL DEFAULT 0",
-#         }
-#         for col, definition in new_cols.items():
-#             if col not in existing:
-#                 conn.execute(text(f"ALTER TABLE notes ADD COLUMN {col} {definition}"))
-#         conn.commit()
-
-
 @app.on_event("startup")
 async def on_startup():
     create_tables()
-    # _apply_migrations()
-    _migrate_columns()
     _setup_search()
-
-
-def _migrate_columns() -> None:
-    from sqlalchemy import text
-    from app.database import engine
-    is_pg = not settings.DATABASE_URL.startswith("sqlite")
-    migrations = [
-        ("note_tasks", "status", "VARCHAR(20) NOT NULL DEFAULT 'local'", "TEXT NOT NULL DEFAULT 'local'"),
-        ("note_tasks", "source", "VARCHAR(10) NOT NULL DEFAULT 'llm'", "TEXT NOT NULL DEFAULT 'llm'"),
-        ("note_tasks", "end_datetime", "VARCHAR(50)", "TEXT"),
-        ("note_tasks", "is_all_day", "BOOLEAN NOT NULL DEFAULT FALSE", "INTEGER NOT NULL DEFAULT 0"),
-        ("notes", "start_datetime", "VARCHAR(50)", "TEXT"),
-        ("notes", "end_datetime", "VARCHAR(50)", "TEXT"),
-        ("notes", "is_all_day", "BOOLEAN NOT NULL DEFAULT FALSE", "INTEGER NOT NULL DEFAULT 0"),
-        ("labels", "color", "VARCHAR(7) NOT NULL DEFAULT ''", "TEXT NOT NULL DEFAULT ''"),
-    ]
-    with engine.connect() as conn:
-        for table, col, pg_def, sqlite_def in migrations:
-            try:
-                if is_pg:
-                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {pg_def}"))
-                else:
-                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {sqlite_def}"))
-            except Exception:
-                pass
-        conn.commit()
 
 
 def _setup_search() -> None:
     from app.search.meili import setup_index
+
     setup_index()
 
     if settings.DATABASE_URL.startswith("sqlite"):
@@ -95,15 +54,18 @@ def _setup_search() -> None:
 
     from sqlalchemy import text
     from app.database import engine
+
     with engine.connect() as conn:
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-        conn.execute(text(
-            "ALTER TABLE notes ADD COLUMN IF NOT EXISTS embedding vector(1536)"
-        ))
-        conn.execute(text(
-            "CREATE INDEX IF NOT EXISTS notes_emb_idx ON notes "
-            "USING hnsw (embedding vector_cosine_ops)"
-        ))
+        conn.execute(
+            text("ALTER TABLE notes ADD COLUMN IF NOT EXISTS embedding vector(1536)")
+        )
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS notes_emb_idx ON notes "
+                "USING hnsw (embedding vector_cosine_ops)"
+            )
+        )
         conn.commit()
 
 
