@@ -68,16 +68,20 @@ Mount your certificates into the `nginx_certs` volume.
 
 ## Migrations
 
-Using Alembic (auto-generated from SQLAlchemy models):
+Alembic is configured in `migrations/` and wired to `app.database.Base` and `app.config.get_settings()`.
 
 ```bash
-# Init (first time)
-uv run alembic init migrations
-# Edit migrations/env.py to import app.database.Base and use DATABASE_URL from config
-
-# Generate migration
+# Generate a migration after changing models
 uv run alembic revision --autogenerate -m "description"
 
-# Apply
+# Apply all pending migrations
 uv run alembic upgrade head
+
+# Check current revision
+uv run alembic current
+
+# Downgrade one step
+uv run alembic downgrade -1
 ```
+
+Migration files live in `migrations/versions/`. Commit them alongside model changes.
