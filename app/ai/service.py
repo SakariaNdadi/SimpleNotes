@@ -12,10 +12,16 @@ If LiteLLM doesn't support a custom endpoint, falls back to direct httpx call.
 from __future__ import annotations
 
 import json
+import logging
 
 import httpx
 import litellm
 from sqlalchemy.orm import Session
+
+litellm.suppress_debug_info = True
+for _log in ("LiteLLM", "LiteLLM Router", "LiteLLM Proxy"):
+    logging.getLogger(_log).setLevel(logging.CRITICAL)
+logging.getLogger("vertex_llm_base").setLevel(logging.CRITICAL)
 
 from app.auth.utils import decrypt_value
 from app.models import UserLLMConfig
@@ -31,9 +37,11 @@ def _get_active_config(db: Session, user_id: str) -> UserLLMConfig | None:
 
 
 def _build_litellm_kwargs(config: UserLLMConfig) -> dict:
-    kwargs: dict = {"model": config.model_name}
+    kwargs: dict = {"model": config.model_name.strip()}
     if config.api_key_encrypted:
-        kwargs["api_key"] = decrypt_value(config.api_key_encrypted)
+        key = decrypt_value(config.api_key_encrypted)
+        if key:
+            kwargs["api_key"] = key
     if config.base_url:
         kwargs["base_url"] = config.base_url
     return kwargs
@@ -68,7 +76,7 @@ async def complete(db: Session, user_id: str, messages: list[dict]) -> str:
         if config.base_url:
             try:
                 api_key = (
-                    decrypt_value(config.api_key_encrypted)
+                    decrypt_value(config.api_key_encrypted) or None
                     if config.api_key_encrypted
                     else None
                 )
@@ -77,6 +85,9 @@ async def complete(db: Session, user_id: str, messages: list[dict]) -> str:
                 )
             except Exception:
                 pass
+        err_str = str(litellm_err)
+        if "DefaultCredentialsError" in err_str and "api_key" not in kwargs:
+            return "LLM credentials not set. Go to Settings → AI and add an API key for your provider."
         return f"AI error: {litellm_err}"
 
 
