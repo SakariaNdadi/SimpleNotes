@@ -2,6 +2,7 @@ import hashlib
 import re
 import secrets
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 
 import bcrypt
 from cryptography.fernet import Fernet
@@ -66,12 +67,20 @@ def hash_token(raw: str) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
+@lru_cache(maxsize=1)
 def _get_fernet() -> Fernet:
     settings = get_settings()
     key = settings.FERNET_KEY
     if not key:
         key = Fernet.generate_key().decode()
-    return Fernet(key.encode() if isinstance(key, str) else key)
+    try:
+        return Fernet(key.encode() if isinstance(key, str) else key)
+    except (ValueError, Exception) as exc:
+        raise ValueError(
+            "FERNET_KEY in .env is invalid. "
+            "Generate one with: "
+            "python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+        ) from exc
 
 
 def encrypt_value(value: str) -> str:
@@ -79,4 +88,8 @@ def encrypt_value(value: str) -> str:
 
 
 def decrypt_value(encrypted: str) -> str:
-    return _get_fernet().decrypt(encrypted.encode()).decode()
+    from cryptography.fernet import InvalidToken
+    try:
+        return _get_fernet().decrypt(encrypted.encode()).decode()
+    except InvalidToken:
+        return ""

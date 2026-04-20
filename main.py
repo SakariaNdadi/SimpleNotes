@@ -40,8 +40,44 @@ app.include_router(preferences_router)
 
 @app.on_event("startup")
 async def on_startup():
+    _ensure_fernet_key()
     create_tables()
     _setup_search()
+
+
+def _ensure_fernet_key() -> None:
+    import os
+    from pathlib import Path
+    from cryptography.fernet import Fernet
+    from app.config import get_settings as _get_settings
+    from app.auth.utils import _get_fernet
+
+    if settings.FERNET_KEY:
+        try:
+            Fernet(settings.FERNET_KEY.encode())
+            return
+        except Exception:
+            pass  # invalid — regenerate
+
+    key = Fernet.generate_key().decode()
+    env_path = Path(".env")
+    if env_path.exists():
+        content = env_path.read_text()
+        if "FERNET_KEY=" in content:
+            env_path.write_text(
+                "\n".join(
+                    f"FERNET_KEY={key}" if line.startswith("FERNET_KEY=") else line
+                    for line in content.splitlines()
+                )
+            )
+        else:
+            env_path.write_text(content.rstrip() + f"\nFERNET_KEY={key}\n")
+    else:
+        env_path.write_text(f"FERNET_KEY={key}\n")
+
+    os.environ["FERNET_KEY"] = key
+    _get_settings.cache_clear()
+    _get_fernet.cache_clear()
 
 
 def _setup_search() -> None:
