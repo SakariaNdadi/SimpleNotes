@@ -8,6 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
-*.db
+*.db*
 .ruff_cache
 .env
