@@ -58,6 +58,91 @@ AI agents can be pointed at this repo and used to fix issues end-to-end. If you 
 3. Run the dev server and verify the change works before submitting
 4. Open the PR as normal
 
+## Testing
+
+### Test types
+
+| Type        | Location             | Tool                           | Requires           |
+|-------------|----------------------|--------------------------------|--------------------|
+| Integration | `tests/integration/` | `TestClient` + real PostgreSQL | Docker test DB     |
+| E2E         | `tests/test_*.py`    | Playwright (browser)           | Running dev server |
+
+### Run integration tests
+
+Start the test database (PostgreSQL + pgvector on port 5433):
+
+```bash
+docker compose -f docker/docker-compose.test.yml up -d
+```
+
+Run the suite:
+
+```bash
+uv run pytest tests/integration/ -v
+```
+
+The test DB is isolated — tables are created fresh per session and each test rolls back its transaction automatically. No cleanup needed between runs.
+
+To use a different DB, set the env var before running:
+
+```bash
+TEST_DATABASE_URL=postgresql+psycopg://user:pass@host:port/db uv run pytest tests/integration/ -v
+```
+
+### Run E2E tests
+
+Start the dev server first:
+
+```bash
+uv run uvicorn main:app --reload
+```
+
+Then run:
+
+```bash
+uv run pytest tests/ --ignore=tests/integration -v
+```
+
+Install Playwright browsers if you haven't:
+
+```bash
+uv run playwright install chromium
+```
+
+### Run everything
+
+```bash
+# terminal 1
+docker compose -f docker/docker-compose.test.yml up -d
+uv run uvicorn main:app --reload
+
+# terminal 2
+uv run pytest tests/ -v
+```
+
+---
+
+### What tests to write
+
+**Adding a new endpoint** → write an integration test in the matching `tests/integration/test_<module>.py`.
+
+- Auth endpoints → `tests/integration/test_auth.py`
+- Notes endpoints → `tests/integration/test_notes.py`
+- Labels → `tests/integration/test_labels.py`
+- Tasks → `tests/integration/test_tasks.py`
+- Profile → `tests/integration/test_profile.py`
+- Preferences → `tests/integration/test_preferences.py`
+
+Minimum per endpoint: one happy-path test and one error case (missing auth, bad input, or not found).
+
+**Adding a UI flow** → write an E2E test in `tests/test_<feature>.py` using Playwright. Use `logged_in` fixture for authenticated flows. Use `expect()` assertions — avoid `wait_for_timeout` where possible.
+
+**Changing auth or DB models** → update both the integration test fixtures in `tests/integration/conftest.py` and any affected test files.
+
+**No tests needed** for: config changes, template-only styling, migrations that don't change behaviour.
+
+---
+
 ## Code Style
 
 Linting is handled by [Ruff](https://docs.astral.sh/ruff/):
