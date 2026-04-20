@@ -93,9 +93,9 @@
   border: 2px solid var(--border); border-top-color: var(--accent);
   border-radius: 50%; animation: spin .6s linear infinite; flex-shrink: 0;
 }
-.htmx-request .spinner { display: inline-block; }
 .htmx-indicator { display: none; }
-.htmx-request .htmx-indicator { display: inline-flex; align-items: center; gap: .35rem; }
+.htmx-indicator.htmx-request { display: inline-flex; align-items: center; gap: .35rem; }
+.htmx-indicator.htmx-request .spinner { display: inline-block; }
 
 /* ── Note body clamp ─────────────────────────────────────────────────────────── */
 .note-body-clamped {
