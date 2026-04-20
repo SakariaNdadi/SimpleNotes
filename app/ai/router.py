@@ -71,6 +71,65 @@ async def delete_llm_config(
     return templates.TemplateResponse("partials/llm_settings.html", {"request": request, "configs": configs})
 
 
+@router.get("/settings/llm/{config_id}/edit", response_class=HTMLResponse)
+async def edit_llm_config_form(
+    request: Request,
+    config_id: str,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    config = db.query(UserLLMConfig).filter(UserLLMConfig.id == config_id, UserLLMConfig.user_id == user.id).first()
+    if not config:
+        return HTMLResponse("Not found", status_code=404)
+    return templates.TemplateResponse(
+        "partials/llm_edit_form.html", {"request": request, "cfg": config}
+    )
+
+
+@router.put("/settings/llm/{config_id}", response_class=HTMLResponse)
+async def update_llm_config(
+    request: Request,
+    config_id: str,
+    provider_name: str = Form(...),
+    model_name: str = Form(...),
+    base_url: str = Form(""),
+    api_key: str = Form(""),
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    config = db.query(UserLLMConfig).filter(UserLLMConfig.id == config_id, UserLLMConfig.user_id == user.id).first()
+    if not config:
+        return HTMLResponse("Not found", status_code=404)
+    config.provider_name = provider_name.strip()
+    config.model_name = model_name.strip()
+    config.base_url = base_url.strip() or None
+    if api_key:
+        config.api_key_encrypted = encrypt_value(api_key)
+    db.commit()
+    configs = db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).all()
+    return templates.TemplateResponse(
+        "partials/llm_settings.html",
+        {"request": request, "configs": configs, "success": "Config updated"},
+    )
+
+
+@router.post("/settings/llm/{config_id}/deactivate", response_class=HTMLResponse)
+async def deactivate_llm_config(
+    request: Request,
+    config_id: str,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    config = db.query(UserLLMConfig).filter(UserLLMConfig.id == config_id, UserLLMConfig.user_id == user.id).first()
+    if config:
+        config.is_active = False
+        db.commit()
+    configs = db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).all()
+    return templates.TemplateResponse(
+        "partials/llm_settings.html", {"request": request, "configs": configs}
+    )
+
+
 @router.post("/settings/llm/{config_id}/activate", response_class=HTMLResponse)
 async def activate_llm_config(
     request: Request,

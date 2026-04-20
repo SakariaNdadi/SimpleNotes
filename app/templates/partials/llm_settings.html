@@ -6,13 +6,16 @@
   <div class="space-y-2">
     {% if configs %}
     {% for cfg in configs %}
-    <div class="flex items-center justify-between p-3 rounded-xl border border-base {% if cfg.is_active %}bg-ai-surface border-[color:var(--ai-border)]{% else %}bg-surface2{% endif %}">
+    <div class="flex items-center justify-between p-3 rounded-xl border border-base {% if cfg.is_active %}bg-ai-surface border-[color:var(--ai-border)]{% else %}bg-surface2{% endif %}"
+         id="llm-cfg-{{ cfg.id }}">
       <div class="min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
           <span class="text-sm font-medium text-primary">{{ cfg.provider_name }}</span>
           <span class="text-xs text-muted">{{ cfg.model_name }}</span>
           {% if cfg.is_active %}
           <span class="text-xs bg-tag px-2 py-0.5 rounded-full font-medium">Active</span>
+          {% else %}
+          <span class="text-xs text-muted px-2 py-0.5 rounded-full border border-base">Inactive</span>
           {% endif %}
         </div>
         {% if cfg.base_url %}
@@ -20,7 +23,15 @@
         {% endif %}
       </div>
       <div class="flex gap-1 ml-2 flex-shrink-0">
-        {% if not cfg.is_active %}
+        <button hx-get="/settings/llm/{{ cfg.id }}/edit"
+                hx-target="#llm-cfg-{{ cfg.id }}"
+                hx-swap="outerHTML"
+                class="text-xs text-secondary hover:text-primary px-2 py-1">Edit</button>
+        {% if cfg.is_active %}
+        <button hx-post="/settings/llm/{{ cfg.id }}/deactivate"
+                hx-target=".llm-settings" hx-swap="outerHTML"
+                class="text-xs text-muted hover:text-primary px-2 py-1">Deactivate</button>
+        {% else %}
         <button hx-post="/settings/llm/{{ cfg.id }}/activate"
                 hx-target=".llm-settings" hx-swap="outerHTML"
                 class="text-xs text-accent hover:underline px-2 py-1">Activate</button>

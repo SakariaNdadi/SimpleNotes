@@ -102,6 +102,9 @@ def _setup_search() -> None:
                 "USING hnsw (embedding vector_cosine_ops)"
             )
         )
+        conn.execute(
+            text("ALTER TABLE note_tasks ALTER COLUMN note_id DROP NOT NULL")
+        )
         conn.commit()
 
 

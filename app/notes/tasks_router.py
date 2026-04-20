@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models import CalendarToken, NoteTask, User
 from app.notes.task_service import (
     confirm_task,
+    create_task,
     delete_task,
     dismiss_task,
     get_discovered_tasks,
@@ -53,6 +54,35 @@ async def tasks_panel(
             "active_filter": filter,
             "providers": providers,
         },
+    )
+
+
+@router.post("", response_class=HTMLResponse)
+async def create_task_route(
+    request: Request,
+    title: str = Form(...),
+    description: str = Form(""),
+    due_datetime: str = Form(""),
+    end_datetime: str = Form(""),
+    is_all_day: str = Form(""),
+    task_type: str = Form("task"),
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    if not title.strip():
+        return HTMLResponse('<p class="text-[11px] text-red-500">Title required</p>', status_code=422)
+    task = create_task(
+        db, user.id, title.strip(), description,
+        task_type, due_datetime or None, end_datetime or None, bool(is_all_day),
+    )
+    providers = [
+        t.provider
+        for t in db.query(CalendarToken).filter(CalendarToken.user_id == user.id).all()
+    ]
+    return templates.TemplateResponse(
+        "partials/task_card.html",
+        {"request": request, "task": task, "providers": providers},
+        headers={"HX-Trigger": "taskCountChanged"},
     )
 
 

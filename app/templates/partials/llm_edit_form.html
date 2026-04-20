@@ -1,0 +1,40 @@
+<div class="p-3 rounded-xl border border-[color:var(--accent)]/50 bg-surface2"
+     id="llm-cfg-{{ cfg.id }}">
+  <form hx-put="/settings/llm/{{ cfg.id }}"
+        hx-target=".llm-settings"
+        hx-swap="outerHTML"
+        class="space-y-2">
+    <div>
+      <label class="block text-[10px] font-medium text-secondary mb-1">Provider name</label>
+      <input type="text" name="provider_name" value="{{ cfg.provider_name }}" required
+             class="input-base w-full px-2 py-1.5 rounded-lg border text-sm" />
+    </div>
+    <div>
+      <label class="block text-[10px] font-medium text-secondary mb-1">Model name</label>
+      <input type="text" name="model_name" value="{{ cfg.model_name }}" required
+             class="input-base w-full px-2 py-1.5 rounded-lg border text-sm" />
+    </div>
+    <div>
+      <label class="block text-[10px] font-medium text-secondary mb-1">Base URL</label>
+      <input type="url" name="base_url" value="{{ cfg.base_url or '' }}"
+             placeholder="http://localhost:11434"
+             class="input-base w-full px-2 py-1.5 rounded-lg border text-sm" />
+    </div>
+    <div>
+      <label class="block text-[10px] font-medium text-secondary mb-1">
+        API Key <span class="text-muted font-normal">(leave blank to keep existing)</span>
+      </label>
+      <input type="password" name="api_key" placeholder="sk-…"
+             class="input-base w-full px-2 py-1.5 rounded-lg border text-sm" />
+    </div>
+    <div class="flex gap-1.5 pt-0.5">
+      <button type="submit"
+              class="text-[11px] btn-accent px-3 py-1 rounded font-medium">Save</button>
+      <button type="button"
+              hx-get="/settings/llm"
+              hx-target=".llm-settings"
+              hx-swap="outerHTML"
+              class="text-[11px] text-muted hover:text-primary px-3 py-1 transition-colors">Cancel</button>
+    </div>
+  </form>
+</div>

@@ -155,7 +155,7 @@ class NoteTask(Base):
     __tablename__ = "note_tasks"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"), nullable=False)
+    note_id: Mapped[str | None] = mapped_column(ForeignKey("notes.id"), nullable=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[str] = mapped_column(Text, default="")

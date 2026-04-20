@@ -5,6 +5,34 @@ from sqlalchemy.orm import Session
 from app.models import NoteTask
 
 
+def create_task(
+    db: Session,
+    user_id: str,
+    title: str,
+    description: str = "",
+    task_type: str = "task",
+    due_datetime: str | None = None,
+    end_datetime: str | None = None,
+    is_all_day: bool = False,
+) -> NoteTask:
+    task = NoteTask(
+        note_id=None,
+        user_id=user_id,
+        title=title[:500],
+        description=description,
+        task_type=task_type,
+        due_datetime=due_datetime or None,
+        end_datetime=end_datetime or None,
+        is_all_day=is_all_day,
+        source="manual",
+        status="local",
+    )
+    db.add(task)
+    db.commit()
+    db.refresh(task)
+    return task
+
+
 def save_tasks(
     db: Session,
     user_id: str,
