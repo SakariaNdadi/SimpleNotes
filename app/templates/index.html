@@ -243,7 +243,8 @@
                 class="bg-surface border border-accent rounded shadow-sm overflow-hidden focus-within:ring-1 focus-within:ring-accent transition-shadow"
                 hx-post="/notes" hx-target="#note-feed" hx-swap="afterbegin"
                 hx-on::before-request="document.getElementById('note-feed').insertAdjacentHTML('afterbegin', '<div id=\'note-skeleton\' class=\'animate-pulse flex gap-2.5 pb-1 px-1 mb-2\'><div class=\'w-2 h-2 rounded-full bg-surface2 mt-1.5 flex-shrink-0\'></div><div class=\'flex-1 space-y-1.5 py-0.5\'><div class=\'h-2 bg-surface2 rounded w-3/4\'></div><div class=\'h-2 bg-surface2 rounded w-1/2\'></div></div></div>')"
-                hx-on::after-request="document.getElementById('note-skeleton')?.remove(); closeComposer(); this.reset()"
+                hx-on::after-request="document.getElementById('note-skeleton')?.remove()"
+                @htmx:after-request="if($event.detail.successful){ $el.reset() }"
                 @keydown.ctrl.enter="$el.requestSubmit()" @keydown.meta.enter="$el.requestSubmit()">
                 <textarea name="description" rows="3" required x-ref="composerTA"
                     placeholder="Write a note... (Ctrl+Enter to save)"
