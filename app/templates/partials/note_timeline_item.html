@@ -1,10 +1,7 @@
 {% set has_discovered = note.tasks | selectattr('status', 'equalto', 'discovered') | list | length > 0 %}
 <div class="relative flex gap-2.5 pb-1 group hover:pb-3 transition-all duration-200" id="note-{{ note.id }}">
     <div class="flex-shrink-0 flex flex-col items-center z-10">
-        <div
-            class="w-2 h-2 rounded-full border-2 mt-1.5 transition-all duration-200
-                   {% if has_discovered %}border-[color:var(--accent)] bg-[color:var(--accent)]{% else %}border-[color:var(--border)] bg-[color:var(--surface)] group-hover:border-[color:var(--accent)] group-hover:bg-[color:var(--accent)]{% endif %}">
-        </div>
+        <div class="w-2 h-2 rounded-full border-2 mt-1.5 transition-all duration-200 {% if has_discovered %}note-dot-active{% else %}note-dot{% endif %}"></div>
     </div>
 
     <div class="flex-1 min-w-0 {% if has_discovered %}pl-2 border-l-2 border-[color:var(--accent)]/40 rounded-sm{% endif %}">
@@ -49,8 +46,7 @@
         </p>
         {% endif %}
 
-        <div
-            class="flex items-center gap-0.5 max-h-0 overflow-hidden opacity-0 group-hover:max-h-8 group-hover:mt-1 group-hover:opacity-100 transition-all duration-200">
+        <div class="flex items-center gap-0.5 note-actions">
             <span x-show="$store.app.aiEnabled" class="inline-flex items-center gap-0.5">
                 <button title="AI summary" hx-post="/ai/summary/{{ note.id }}" hx-target="#summary-{{ note.id }}"
                     hx-swap="innerHTML" hx-indicator="#sum-ind-{{ note.id }}"

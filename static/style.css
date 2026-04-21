@@ -114,7 +114,6 @@
 [x-cloak] { display: none !important; }
 
 /* ── Timeline Feed ───────────────────────────────────────────────────────────── */
-/* All other timeline styles use Tailwind classes. Only ::before needs custom CSS. */
 .timeline-feed::before {
   content: '';
   position: absolute;
@@ -124,4 +123,29 @@
   width: 1px;
   background-color: var(--border);
   z-index: 0;
+}
+
+.note-dot {
+  border-color: var(--border);
+  background-color: var(--surface);
+}
+.group:hover .note-dot {
+  border-color: var(--accent);
+  background-color: var(--accent);
+}
+.note-dot-active {
+  border-color: var(--accent);
+  background-color: var(--accent);
+}
+
+.note-actions {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.2s ease, opacity 0.2s ease, margin-top 0.2s ease;
+}
+.group:hover .note-actions {
+  max-height: 2rem;
+  margin-top: 0.25rem;
+  opacity: 1;
 }
