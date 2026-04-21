@@ -28,6 +28,13 @@
           class="text-[11px] btn-accent px-2 py-0.5 rounded font-medium">
           ✓ Add
         </button>
+        <button
+          hx-get="/tasks/{{ task.id }}/edit"
+          hx-target="#disc-task-{{ task.id }}"
+          hx-swap="outerHTML"
+          class="text-[11px] border border-base rounded px-2 py-0.5 text-secondary hover:bg-surface2 transition-colors">
+          Edit
+        </button>
         {% for provider in providers %}
         <form hx-post="/integrations/{{ provider }}/create-task"
               hx-target="#disc-task-{{ task.id }}"
@@ -86,15 +93,15 @@
                class="rounded border-base accent-[color:var(--accent)]" />
         All day
       </label>
-      <div class="flex gap-1.5">
+      <div x-show="!allDay" class="flex gap-1.5">
         <div class="flex-1">
           <label class="block text-[10px] text-muted mb-0.5">Due</label>
-          <input :type="allDay ? 'date' : 'datetime-local'" name="due_datetime"
+          <input type="datetime-local" name="due_datetime"
                  class="w-full text-[11px] bg-transparent border border-base rounded-lg px-2 py-1.5 text-muted focus:outline-none focus:border-[color:var(--accent)]" />
         </div>
         <div class="flex-1">
           <label class="block text-[10px] text-muted mb-0.5">End</label>
-          <input :type="allDay ? 'date' : 'datetime-local'" name="end_datetime"
+          <input type="datetime-local" name="end_datetime"
                  class="w-full text-[11px] bg-transparent border border-base rounded-lg px-2 py-1.5 text-muted focus:outline-none focus:border-[color:var(--accent)]" />
         </div>
       </div>

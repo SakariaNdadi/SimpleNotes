@@ -28,6 +28,7 @@ async def list_notes(
 ):
     notes = service.get_notes(db, user.id, offset=offset, label_id=label_id or None)
     labels = get_labels(db, user.id)
+    providers = _connected_providers(db, user.id)
     next_offset = offset + len(notes)
     has_more = len(notes) == 20
     return templates.TemplateResponse(
@@ -36,6 +37,7 @@ async def list_notes(
             "request": request,
             "notes": notes,
             "labels": labels,
+            "providers": providers,
             "next_offset": next_offset,
             "has_more": has_more,
             "label_id": label_id,

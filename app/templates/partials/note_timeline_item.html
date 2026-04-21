@@ -103,7 +103,8 @@
 
         <div id="summary-{{ note.id }}"></div>
         <div id="history-panel-{{ note.id }}" class="mt-1"></div>
-        {% if discovered_tasks is defined %}
+        {% set discovered_tasks = note.tasks | selectattr('status', 'equalto', 'discovered') | list %}
+        {% if discovered_tasks %}
         {% include "partials/nlp_task_prompt.html" %}
         {% endif %}
     </div>

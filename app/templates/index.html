@@ -252,14 +252,23 @@
 
         <div x-show="composerOpen" x-transition x-cloak class="px-4 pt-4 pb-0 max-w-2xl w-full mx-auto relative z-0">
             <form
+                x-data="{ saving: false }"
                 class="bg-surface border border-accent rounded shadow-sm overflow-hidden focus-within:ring-1 focus-within:ring-accent transition-shadow"
                 hx-post="/notes" hx-target="#note-feed" hx-swap="innerHTML"
-                @htmx:after-request="if($event.detail.successful){ $el.reset(); htmx.ajax('GET', '/notes?label_id=' + ($store.app?.activeLabelId || ''), {target:'#note-feed', swap:'innerHTML'}) }"
+                @htmx:before-request="saving = true"
+                @htmx:after-request="saving = false; if($event.detail.successful){ $el.reset(); htmx.ajax('GET', '/notes?label_id=' + ($store.app?.activeLabelId || ''), {target:'#note-feed', swap:'innerHTML'}) }"
                 @keydown.ctrl.enter="$el.requestSubmit()" @keydown.meta.enter="$el.requestSubmit()">
                 <textarea name="description" rows="3" required x-ref="composerTA"
                     placeholder="Write a note... (Ctrl+Enter to save)"
                     class="input-base w-full px-3 pt-2.5 pb-1 text-[13px] leading-snug resize-none border-0 focus:ring-0 bg-transparent"></textarea>
-                <div x-data="{ schedOpen: false, allDay: false }" class="border-t border-base">
+                <div x-data="{
+                    schedOpen: false, allDay: false,
+                    get nowMin() {
+                        const now = new Date();
+                        if (this.allDay) return now.toISOString().slice(0, 10);
+                        return new Date(now - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                    }
+                }" class="border-t border-base">
                     <div class="flex items-center justify-between px-2 py-1.5 bg-surface2">
                         <div class="flex items-center gap-1.5">
                             <select name="label_id"
@@ -281,7 +290,11 @@
                         <div class="flex items-center gap-1.5">
                             <button type="button" @click="closeComposer()"
                                 class="text-[11px] text-secondary hover:text-primary px-2.5 py-1 rounded transition-colors">Cancel</button>
-                            <button type="submit" class="btn-accent text-[11px] font-medium px-3 py-1 rounded">Save</button>
+                            <button type="submit" :disabled="saving"
+                                class="btn-accent text-[11px] font-medium px-3 py-1 rounded flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed">
+                                <span x-show="saving" class="spinner w-3 h-3 border-2"></span>
+                                <span x-text="saving ? 'Saving…' : 'Save'"></span>
+                            </button>
                         </div>
                     </div>
                     <div x-show="schedOpen" x-transition class="px-2 pb-2 bg-surface2 space-y-1.5">
@@ -290,15 +303,15 @@
                                 class="rounded border-base accent-[color:var(--accent)]" />
                             All day
                         </label>
-                        <div class="flex gap-1.5">
+                        <div x-show="!allDay" class="flex gap-1.5">
                             <div class="flex-1">
                                 <label class="block text-[10px] text-muted mb-0.5">Start</label>
-                                <input :type="allDay ? 'date' : 'datetime-local'" name="start_datetime"
+                                <input type="datetime-local" name="start_datetime" :min="nowMin"
                                     class="input-base w-full text-[11px] px-2 py-1 rounded border bg-surface outline-none focus:border-[color:var(--accent)]" />
                             </div>
                             <div class="flex-1">
                                 <label class="block text-[10px] text-muted mb-0.5">End</label>
-                                <input :type="allDay ? 'date' : 'datetime-local'" name="end_datetime"
+                                <input type="datetime-local" name="end_datetime" :min="nowMin"
                                     class="input-base w-full text-[11px] px-2 py-1 rounded border bg-surface outline-none focus:border-[color:var(--accent)]" />
                             </div>
                         </div>
@@ -430,7 +443,8 @@
                 this.currentPalette = savedPalette;
 
                 document.body.addEventListener('htmx:afterSettle', (e) => {
-                    if (e.detail?.elt) Alpine.initTree(e.detail.elt);
+                    const initTarget = e.detail?.target || e.detail?.elt;
+                    if (initTarget) Alpine.initTree(initTarget);
                     const trigger = e.detail?.xhr?.getResponseHeader('HX-Trigger');
                     if (trigger) {
                         try {

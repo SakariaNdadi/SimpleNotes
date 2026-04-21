@@ -105,10 +105,30 @@ async def tasks_count(
 @router.post("/{task_id}/confirm", response_class=HTMLResponse)
 async def confirm_task_route(
     task_id: str,
+    title: str = Form(""),
+    description: str = Form(""),
+    due_datetime: str = Form(""),
+    end_datetime: str = Form(""),
+    is_all_day: str = Form(""),
+    task_type: str = Form(""),
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    confirm_task(db, task_id, user.id)
+    task = db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user.id).first()
+    if task and task.status == "discovered":
+        if title.strip():
+            task.title = title.strip()
+        if description is not None:
+            task.description = description
+        if due_datetime:
+            task.due_datetime = due_datetime
+        if end_datetime:
+            task.end_datetime = end_datetime
+        task.is_all_day = bool(is_all_day)
+        if task_type:
+            task.task_type = task_type
+        task.status = "local"
+        db.commit()
     return HTMLResponse("", headers={"HX-Trigger": "taskCountChanged"})
 
 

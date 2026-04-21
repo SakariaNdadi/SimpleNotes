@@ -17,16 +17,16 @@
              class="rounded border-base accent-[color:var(--accent)]" />
       All day
     </label>
-    <div class="flex gap-1.5">
+    <div x-show="!allDay" class="flex gap-1.5">
       <div class="flex-1">
         <label class="block text-[10px] text-muted mb-0.5">Start</label>
-        <input :type="allDay ? 'date' : 'datetime-local'" name="due_datetime"
+        <input type="datetime-local" name="due_datetime"
                value="{{ task.due_datetime or '' }}"
                class="w-full text-[11px] bg-transparent border border-base rounded-lg px-2 py-1.5 text-muted focus:outline-none focus:border-[color:var(--accent)]" />
       </div>
       <div class="flex-1">
         <label class="block text-[10px] text-muted mb-0.5">End</label>
-        <input :type="allDay ? 'date' : 'datetime-local'" name="end_datetime"
+        <input type="datetime-local" name="end_datetime"
                value="{{ task.end_datetime or '' }}"
                class="w-full text-[11px] bg-transparent border border-base rounded-lg px-2 py-1.5 text-muted focus:outline-none focus:border-[color:var(--accent)]" />
       </div>

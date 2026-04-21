@@ -141,6 +141,8 @@ def update_task(
         task.end_datetime = end_datetime or None
         task.is_all_day = is_all_day
         task.task_type = task_type
+        if task.status == "discovered":
+            task.status = "local"
         db.commit()
     return task
 
