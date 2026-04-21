@@ -121,6 +121,16 @@
         </div>
 
         <div class="border-t border-base py-1.5 flex-shrink-0">
+            <button @click="toggleAI()"
+                class="w-full text-left px-4 py-1.5 text-[13px] flex items-center gap-2.5 transition-colors"
+                :class="aiEnabled ? 'text-[color:var(--accent)] font-medium' : 'text-secondary hover:bg-surface2 hover:text-primary'">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+                <span x-text="aiEnabled ? 'AI enabled' : 'Enable AI'"></span>
+                <span x-show="aiEnabled" class="ml-auto w-1.5 h-1.5 rounded-full bg-[color:var(--accent)]"></span>
+            </button>
             <button @click="settingsPanel = 'llm'"
                 class="w-full text-left px-4 py-1.5 text-[13px] text-secondary hover:bg-surface2 hover:text-primary flex items-center gap-2.5 transition-colors">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,26 +214,13 @@
                 Clear
             </button>
 
-            <button @click="toggleAI()"
-                :title="aiEnabled ? 'AI on — click to disable' : 'AI off — click to enable'"
-                class="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded border transition-colors text-[11px] font-medium"
-                :class="aiEnabled
-                    ? 'border-[color:var(--accent)] text-[color:var(--accent)] bg-[color:var(--accent)]/10'
-                    : 'border-base text-muted hover:text-primary hover:border-[color:var(--accent)]/50'">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                </svg>
-                <span>AI</span>
-            </button>
-
             <button x-show="aiEnabled && searchQuery" x-cloak
                 :disabled="aiSearching"
                 hx-post="/ai/search" hx-target="#note-feed" hx-swap="innerHTML"
                 hx-include="#search-query"
                 hx-on::before-request="aiSearching = true; searchActive = true"
                 hx-on::after-request="aiSearching = false"
-                class="flex-shrink-0 flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded border transition-colors border-[color:var(--accent)] text-[color:var(--accent)] bg-[color:var(--accent)]/10 hover:bg-[color:var(--accent)]/20 disabled:opacity-40 disabled:cursor-not-allowed">
+                class="flex-shrink-0 flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors bg-[color:var(--accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
                 <svg class="w-3.5 h-3.5" :class="aiSearching ? 'animate-spin' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
