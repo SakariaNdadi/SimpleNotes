@@ -132,6 +132,29 @@ async def detect_tasks(db: Session, user_id: str, note_text: str) -> list[dict]:
         return []
 
 
+async def answer_from_notes(
+    db: Session, user_id: str, query: str, notes: list
+) -> str:
+    if not notes:
+        return ""
+    context = "\n".join(
+        f"[{i+1}] ({n.created_at.strftime('%b %d, %Y') if n.created_at else '?'}): {n.description[:300]}"
+        for i, n in enumerate(notes)
+    )
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are a personal notes assistant. Answer the user's question directly and concisely "
+                "using only the notes provided as context. Include relevant dates or details from the notes. "
+                "If the notes don't contain enough information, say so briefly."
+            ),
+        },
+        {"role": "user", "content": f"Question: {query}\n\nNotes:\n{context}"},
+    ]
+    return await complete(db, user_id, messages)
+
+
 async def semantic_search(
     db: Session, user_id: str, query: str, notes: list, languages: list[str] | None = None
 ) -> list:
@@ -162,6 +185,7 @@ async def semantic_search(
         start = raw.find("[")
         end = raw.rfind("]") + 1
         indices = json.loads(raw[start:end]) if start != -1 else []
-        return [notes[i - 1] for i in indices if 1 <= i <= len(notes)]
+        results = [notes[i - 1] for i in indices if 1 <= i <= len(notes)]
+        return results if results else notes[:10]
     except (json.JSONDecodeError, ValueError, IndexError):
         return notes[:10]

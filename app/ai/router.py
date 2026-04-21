@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -200,8 +202,25 @@ async def ai_search(
     db: Session = Depends(get_db),
 ):
     from app.labels.service import get_labels
+    from app.models import Note
+    from app.preferences.service import get_languages
 
-    results = await hybrid_search(db, user.id, query)
+    prefs = get_or_create_prefs(db, user.id)
+    langs = get_languages(prefs)
+
+    all_notes = db.query(Note).filter(
+        Note.user_id == user.id,
+        Note.is_deleted == False,  # noqa: E712
+        Note.is_archived == False,  # noqa: E712
+    ).order_by(Note.created_at.desc()).limit(100).all()
+
+    hybrid_results = await hybrid_search(db, user.id, query)
+    candidates = hybrid_results if hybrid_results else all_notes
+
+    results, answer = await asyncio.gather(
+        ai_service.semantic_search(db, user.id, query, candidates, languages=langs),
+        ai_service.answer_from_notes(db, user.id, query, candidates[:20]),
+    )
 
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
@@ -215,6 +234,7 @@ async def ai_search(
             "label_id": "",
             "is_search": True,
             "is_ai_search": True,
+            "ai_answer": answer,
         },
     )
 
