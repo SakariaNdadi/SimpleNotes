@@ -15,7 +15,7 @@
   <span class="text-[11px] text-muted">— {{ notes|length }} result{{ 's' if notes|length != 1 }}</span>
 </div>
 {% endif %}
-<div class="relative timeline-feed">
+<div class="relative timeline-feed" id="timeline-feed">
     {% for note in notes %}
     {% include "partials/note_timeline_item.html" %}
     {% endfor %}
