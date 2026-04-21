@@ -61,21 +61,21 @@
 {% endif %}
 
 <!-- ── Created Tasks ─────────────────────────────────────── -->
-<div>
+<div x-data="{ newTaskOpen: false, allDay: false }">
   <div class="flex items-center gap-2 mb-2">
     <span class="w-1.5 h-1.5 rounded-full bg-muted"></span>
     <p class="text-[10px] font-semibold text-muted uppercase tracking-widest">Created</p>
     <button id="new-task-toggle"
-            @click="$refs.newTaskForm.classList.toggle('hidden')"
+            @click="newTaskOpen = !newTaskOpen"
             class="ml-auto text-[10px] text-accent hover:underline">+ New</button>
   </div>
 
-  <div x-ref="newTaskForm" x-data="{ allDay: false }"
-       class="hidden mb-3 p-2.5 rounded-xl border border-[color:var(--accent)]/40 bg-surface2">
+  <div x-show="newTaskOpen" x-transition
+       class="mb-3 p-2.5 rounded-xl border border-[color:var(--accent)]/40 bg-surface2">
     <form hx-post="/tasks"
           hx-target="#created-tasks-list"
           hx-swap="afterbegin"
-          hx-on::after-request="this.reset(); $refs.newTaskForm.classList.add('hidden'); htmx.trigger(document.body, 'taskCountChanged')"
+          @htmx:after-request="if($event.detail.successful){ $el.reset(); newTaskOpen = false; htmx.trigger(document.body, 'taskCountChanged') }"
           class="space-y-2">
       <input type="text" name="title" required placeholder="Task title"
              class="w-full text-[12px] bg-transparent border border-base rounded-lg px-2 py-1.5 text-primary focus:outline-none focus:border-[color:var(--accent)]" />
@@ -106,7 +106,7 @@
       <div class="flex gap-1.5">
         <button type="submit" class="text-[11px] btn-accent px-3 py-1 rounded font-medium">Add</button>
         <button type="button"
-                @click="$refs.newTaskForm.classList.add('hidden')"
+                @click="newTaskOpen = false"
                 class="text-[11px] text-muted hover:text-primary px-3 py-1 transition-colors">Cancel</button>
       </div>
     </form>
