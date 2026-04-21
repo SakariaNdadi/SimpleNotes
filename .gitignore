@@ -11,6 +11,5 @@ wheels/
 *.db*
 .ruff_cache
 .env
-.claude/
 .mcp*
 .pytest_cache/
