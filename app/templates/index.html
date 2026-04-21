@@ -218,8 +218,8 @@
                 :disabled="aiSearching"
                 hx-post="/ai/search" hx-target="#note-feed" hx-swap="innerHTML"
                 hx-include="#search-query"
-                hx-on::before-request="aiSearching = true; searchActive = true"
-                hx-on::after-request="aiSearching = false"
+                @htmx:before-request="aiSearching = true; searchActive = true"
+                @htmx:after-request="aiSearching = false"
                 class="flex-shrink-0 flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors bg-[color:var(--accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
                 <svg class="w-3.5 h-3.5" :class="aiSearching ? 'animate-spin' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -308,7 +308,12 @@
         </div>
 
         <div class="flex-1 overflow-y-auto">
-            <div id="note-feed" class="px-4 py-4 max-w-2xl mx-auto" hx-get="/notes" hx-trigger="load"
+            <div x-show="aiSearching" x-cloak
+                class="px-4 py-10 max-w-2xl mx-auto flex flex-col items-center gap-3 text-muted text-[13px]">
+                <span class="spinner w-5 h-5 border-2"></span>
+                <span>Asking AI…</span>
+            </div>
+            <div id="note-feed" x-show="!aiSearching" class="px-4 py-4 max-w-2xl mx-auto" hx-get="/notes" hx-trigger="load"
                 hx-swap="innerHTML">
                 <div class="text-center text-muted py-10 text-[12px] flex items-center justify-center gap-2">
                     <span class="spinner border-2"></span> Loading...
