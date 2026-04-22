@@ -72,7 +72,8 @@ def test_process_chunk_empty_returns_none():
 
 def test_process_chunk_no_trigger_no_date_no_action_returns_none():
     """Decision Table: no trigger + no date + no inherited_action → None."""
-    assert _process_chunk("random words here", None, set()) is None
+    # Text with no action trigger and no date-parseable phrase
+    assert _process_chunk("the fox jumped over the fence", None, set()) is None
 
 
 def test_process_chunk_deduplication_via_seen():

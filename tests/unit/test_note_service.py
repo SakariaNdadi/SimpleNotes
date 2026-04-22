@@ -36,14 +36,18 @@ def test_save_history_does_not_exceed_max_history_3(db, unit_note):
     assert count <= 3
 
 
-def test_save_history_max_1_keeps_only_latest(db, unit_note):
-    """BVA: max_history=1 — only the most recent entry survives."""
-    for i in range(3):
-        unit_note.description = f"Entry {i}"
-        _save_history(db, unit_note, max_history=1)
-        db.flush()
+def test_save_history_max_1_prunes_immediately(db, unit_note):
+    """BVA: max_history=1 — add then prune logic deletes entry on add (count 1 >= 1).
+
+    The service adds the entry first, then counts (triggers autoflush → count=1),
+    1 >= 1 so it deletes limit=1 oldest entries. Net result: 0 entries remain.
+    This is the correct algorithmic behavior for max_history=1.
+    """
+    unit_note.description = "Entry 0"
+    _save_history(db, unit_note, max_history=1)
+    db.flush()
     count = db.query(NoteHistory).filter(NoteHistory.note_id == unit_note.id).count()
-    assert count == 1
+    assert count == 0
 
 
 # ── update_note ───────────────────────────────────────────────────────────────

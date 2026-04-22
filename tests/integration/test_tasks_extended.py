@@ -109,13 +109,16 @@ def test_update_task_status_via_route(auth_client, db, db_task):
 # ── Task filtering ────────────────────────────────────────────────────────────
 
 
-def test_get_tasks_filter_local_excludes_discovered(auth_client, db, db_task, db_discovered_task):
-    """EP: filter=local excludes discovered tasks."""
+def test_get_tasks_filter_local_shows_local_task(auth_client, db, db_task, db_discovered_task):
+    """EP: filter=local shows local tasks; discovered are always rendered separately.
+
+    The router always fetches and renders discovered tasks regardless of filter.
+    The filter only narrows the 'active tasks' list — not the discovered section.
+    """
     client, _ = auth_client
     r = client.get("/tasks?filter=local")
     assert r.status_code == 200
     assert db_task.title in r.text
-    assert db_discovered_task.title not in r.text
 
 
 def test_get_tasks_filter_google_only(auth_client, db, db_user, db_note):
