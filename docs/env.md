@@ -20,6 +20,10 @@
 | `MICROSOFT_CLIENT_ID` | *(empty)* | No | Microsoft OAuth App ID |
 | `MICROSOFT_CLIENT_SECRET` | *(empty)* | No | Microsoft OAuth Client Secret |
 | `MICROSOFT_TENANT_ID` | `common` | No | `common` or your tenant ID |
+| `MEILI_URL` | *(empty)* | No | Meilisearch URL (e.g. `http://localhost:7700`) |
+| `MEILI_KEY` | *(empty)* | No | Meilisearch master key |
+| `EMBEDDING_MODEL` | *(empty)* | No | LiteLLM embedding model (e.g. `text-embedding-3-small`, `ollama/nomic-embed-text`) |
+| `EMBEDDING_DIMENSIONS` | `1536` | No | Dimension count of the embedding model — must match the model (OpenAI: 1536, nomic-embed-text: 768, all-minilm: 384) |
 | `POSTGRES_PASSWORD` | `changeme` | Prod | PostgreSQL password |
 | `PGADMIN_EMAIL` | `admin@admin.com` | Prod | pgAdmin login email |
 | `PGADMIN_PASSWORD` | `changeme` | Prod | pgAdmin login password |

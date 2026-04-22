@@ -94,7 +94,7 @@ def _setup_search() -> None:
     with engine.connect() as conn:
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         conn.execute(
-            text("ALTER TABLE notes ADD COLUMN IF NOT EXISTS embedding vector(1536)")
+            text(f"ALTER TABLE notes ADD COLUMN IF NOT EXISTS embedding vector({settings.EMBEDDING_DIMENSIONS})")
         )
         conn.execute(
             text(
