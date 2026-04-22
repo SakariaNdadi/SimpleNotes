@@ -4,7 +4,6 @@ Unit tests for app/notes/service.py.
 ISTQB techniques: EP, BVA, Decision Table.
 Uses SQLite in-memory DB via conftest.py fixtures.
 """
-import pytest
 
 from app.models import Label, Note, NoteHistory
 from app.notes.service import (

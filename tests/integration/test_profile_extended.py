@@ -5,7 +5,6 @@ ISTQB techniques: EP, State Transition, Error Guessing.
 """
 import uuid
 
-import pytest
 
 from app.auth.utils import verify_password
 

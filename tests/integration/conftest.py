@@ -1,6 +1,17 @@
 import os
 import uuid
 
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import Session
+
+from app.auth.utils import create_access_token, hash_password
+from app.config import get_settings
+from app.database import Base, get_db
+from app.models import Note, NoteTask, User
+from main import app
+
 # Must be set before any app imports so get_settings() picks them up.
 _TEST_DB_URL = os.getenv(
     "TEST_DATABASE_URL",
@@ -11,18 +22,8 @@ os.environ.setdefault("MEILI_URL", "")
 os.environ.setdefault("EMBEDDING_MODEL", "")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-32-chars-long-ok!")
 
-from app.config import get_settings
+
 get_settings.cache_clear()
-
-import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import Session
-
-from app.auth.utils import create_access_token, hash_password
-from app.database import Base, get_db
-from app.models import Note, NoteTask, User
-from main import app
 
 
 @pytest.fixture(scope="session")
@@ -110,6 +111,7 @@ def db_task(db, db_user, db_note):
 @pytest.fixture
 def db_label(db, db_user):
     from app.models import Label
+
     user, _ = db_user
     label = Label(user_id=user.id, title="Test Label", color="#aabbcc")
     db.add(label)
@@ -121,6 +123,7 @@ def db_label(db, db_user):
 def db_llm_config(db, db_user):
     from app.models import UserLLMConfig
     from app.auth.utils import encrypt_value
+
     user, _ = db_user
     config = UserLLMConfig(
         user_id=user.id,
@@ -137,6 +140,7 @@ def db_llm_config(db, db_user):
 @pytest.fixture
 def db_discovered_task(db, db_user, db_note):
     from app.models import NoteTask
+
     user, _ = db_user
     task = NoteTask(
         note_id=db_note.id,

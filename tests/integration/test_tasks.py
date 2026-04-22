@@ -1,4 +1,3 @@
-import pytest
 
 
 def test_tasks_panel(auth_client):

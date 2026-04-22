@@ -11,6 +11,9 @@ If LiteLLM doesn't support a custom endpoint, falls back to direct httpx call.
 
 from __future__ import annotations
 
+from app.auth.utils import decrypt_value
+from app.models import UserLLMConfig
+
 import json
 import logging
 
@@ -22,9 +25,6 @@ litellm.suppress_debug_info = True
 for _log in ("LiteLLM", "LiteLLM Router", "LiteLLM Proxy"):
     logging.getLogger(_log).setLevel(logging.CRITICAL)
 logging.getLogger("vertex_llm_base").setLevel(logging.CRITICAL)
-
-from app.auth.utils import decrypt_value
-from app.models import UserLLMConfig
 
 
 def _get_active_config(db: Session, user_id: str) -> UserLLMConfig | None:
@@ -132,13 +132,11 @@ async def detect_tasks(db: Session, user_id: str, note_text: str) -> list[dict]:
         return []
 
 
-async def answer_from_notes(
-    db: Session, user_id: str, query: str, notes: list
-) -> str:
+async def answer_from_notes(db: Session, user_id: str, query: str, notes: list) -> str:
     if not notes:
         return ""
     context = "\n".join(
-        f"[{i+1}] ({n.created_at.strftime('%b %d, %Y') if n.created_at else '?'}): {n.description[:300]}"
+        f"[{i + 1}] ({n.created_at.strftime('%b %d, %Y') if n.created_at else '?'}): {n.description[:300]}"
         for i, n in enumerate(notes)
     )
     messages = [
@@ -156,7 +154,11 @@ async def answer_from_notes(
 
 
 async def semantic_search(
-    db: Session, user_id: str, query: str, notes: list, languages: list[str] | None = None
+    db: Session,
+    user_id: str,
+    query: str,
+    notes: list,
+    languages: list[str] | None = None,
 ) -> list:
     """
     Dev fallback: rank notes by keyword relevance using LLM.

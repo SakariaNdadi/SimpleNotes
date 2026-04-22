@@ -6,7 +6,6 @@ Requires live server at http://localhost:8000 and Playwright.
 
 Run with: pytest tests/e2e/test_tasks_full.py --headed
 """
-import pytest
 from playwright.sync_api import Page, expect
 from conftest import wait_for_alpine
 
@@ -106,7 +105,6 @@ def test_task_count_badge_appears_after_creation(page: Page, base_url, logged_in
     _create_task(page, "Badge Task")
 
     page.wait_for_timeout(500)
-    aside_html = page.locator("aside").inner_html()
     assert page.locator("aside").is_visible()
 
 

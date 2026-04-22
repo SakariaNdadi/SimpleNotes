@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import Note, NoteHistory, NoteTask
+from app.models import Note, NoteHistory
 
 
 def get_notes(

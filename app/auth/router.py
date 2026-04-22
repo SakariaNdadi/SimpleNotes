@@ -69,8 +69,7 @@ async def register(
             status_code=422,
         )
 
-    user = service.create_user(db, username, email, password)
-    # await service.send_verification_email(db, user)
+    service.create_user(db, username, email, password)
     return templates.TemplateResponse(
         "register.html",
         {"request": request, "success": "Account created! You can now log in."},

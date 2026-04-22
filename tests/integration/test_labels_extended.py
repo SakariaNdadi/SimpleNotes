@@ -5,7 +5,6 @@ ISTQB techniques: EP, Error Guessing.
 """
 import uuid
 
-import pytest
 
 from app.models import Note
 

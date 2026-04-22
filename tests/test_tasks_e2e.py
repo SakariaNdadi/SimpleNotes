@@ -1,4 +1,3 @@
-import pytest
 from playwright.sync_api import Page, expect
 from conftest import wait_for_alpine
 

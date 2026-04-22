@@ -3,7 +3,6 @@ Extended integration tests for task routes not covered in test_tasks.py.
 
 ISTQB techniques: EP, BVA, State Transition, Decision Table.
 """
-import pytest
 
 from app.models import NoteTask
 

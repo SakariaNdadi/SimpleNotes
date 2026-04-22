@@ -5,7 +5,6 @@ ISTQB techniques: EP, BVA, State Transition, Error Guessing.
 """
 import uuid
 
-import pytest
 
 from app.models import Note, NoteHistory, User
 from app.auth.utils import hash_password, create_access_token

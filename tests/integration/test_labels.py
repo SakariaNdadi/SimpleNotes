@@ -1,4 +1,3 @@
-import pytest
 
 
 def test_list_labels(auth_client):

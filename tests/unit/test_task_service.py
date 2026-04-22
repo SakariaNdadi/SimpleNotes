@@ -4,9 +4,7 @@ Unit tests for app/notes/task_service.py.
 ISTQB techniques: EP, BVA, State Transition, Decision Table.
 Uses SQLite in-memory DB via conftest.py fixtures.
 """
-import time
 
-import pytest
 
 from app.models import NoteTask
 from app.notes.task_service import (

@@ -1,9 +1,8 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-import pytest
 
-from app.auth.utils import generate_secure_token, hash_token
+from app.auth.utils import generate_secure_token
 from app.models import EmailVerificationToken, PasswordResetToken
 
 

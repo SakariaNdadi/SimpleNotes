@@ -7,7 +7,6 @@ from app.auth.router import require_user
 from app.database import get_db
 from app.models import CalendarToken, NoteTask, User
 from app.notes.task_service import (
-    confirm_task,
     create_task,
     delete_task,
     dismiss_task,

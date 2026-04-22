@@ -7,7 +7,6 @@ LiteLLM calls are patched with AsyncMock to avoid real network calls.
 import uuid
 from unittest.mock import AsyncMock, patch
 
-import pytest
 
 from app.models import NoteSummary, UserLLMConfig
 from app.notes.summary_service import save_summary

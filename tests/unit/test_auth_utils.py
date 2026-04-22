@@ -12,7 +12,6 @@ os.environ.setdefault("FERNET_KEY", "")
 
 from datetime import datetime, timedelta, timezone
 
-import pytest
 from jose import jwt
 
 from app.auth.utils import (

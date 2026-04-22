@@ -5,17 +5,15 @@ os.environ.setdefault("SECRET_KEY", "unit-test-secret-key-32-chars-ok!")
 os.environ.setdefault("MEILI_URL", "")
 os.environ.setdefault("EMBEDDING_MODEL", "")
 os.environ.setdefault("FERNET_KEY", "")
-
-from app.config import get_settings
-get_settings.cache_clear()
-
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-
+from app.config import get_settings
 from app.auth.utils import hash_password
 from app.database import Base
 from app.models import Note, NoteTask, User
+
+get_settings.cache_clear()
 
 
 @pytest.fixture(scope="module")
@@ -38,6 +36,7 @@ def db(engine):
 @pytest.fixture
 def unit_user(db):
     import uuid
+
     uid = uuid.uuid4().hex[:8]
     user = User(
         username=f"unituser_{uid}",
