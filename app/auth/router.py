@@ -30,6 +30,7 @@ def require_user(request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
     if not user:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=401, detail="Not authenticated")
     return user
 
@@ -65,7 +66,11 @@ async def register(
     if errors:
         return templates.TemplateResponse(
             "register.html",
-            {"request": request, "errors": errors, "values": {"username": username, "email": email}},
+            {
+                "request": request,
+                "errors": errors,
+                "values": {"username": username, "email": email},
+            },
             status_code=422,
         )
 
@@ -93,19 +98,29 @@ async def login(
     if not user:
         return templates.TemplateResponse(
             "login.html",
-            {"request": request, "error": "Invalid username or password", "username": username},
+            {
+                "request": request,
+                "error": "Invalid username or password",
+                "username": username,
+            },
             status_code=401,
         )
     if not user.is_verified:
         return templates.TemplateResponse(
             "login.html",
-            {"request": request, "error": "Please verify your email before logging in.", "username": username},
+            {
+                "request": request,
+                "error": "Please verify your email before logging in.",
+                "username": username,
+            },
             status_code=403,
         )
 
     token = create_access_token(user.id)
     resp = RedirectResponse(url="/", status_code=303)
-    resp.set_cookie("access_token", token, httponly=True, samesite="lax", max_age=60 * 60 * 24 * 7)
+    resp.set_cookie(
+        "access_token", token, httponly=True, samesite="lax", max_age=60 * 60 * 24 * 7
+    )
     return resp
 
 
@@ -136,26 +151,35 @@ async def forgot_password_page(request: Request):
 
 
 @router.post("/forgot-password", response_class=HTMLResponse)
-async def forgot_password(request: Request, email: str = Form(...), db: Session = Depends(get_db)):
+async def forgot_password(
+    request: Request, email: str = Form(...), db: Session = Depends(get_db)
+):
     user = service.get_user_by_email(db, email)
     if user:
         await service.send_password_reset_email(db, user)
     # Always show success to prevent email enumeration
     return templates.TemplateResponse(
         "forgot_password.html",
-        {"request": request, "success": "If that email exists, a reset link has been sent."},
+        {
+            "request": request,
+            "success": "If that email exists, a reset link has been sent.",
+        },
     )
 
 
 @router.get("/reset-password/{token}", response_class=HTMLResponse)
-async def reset_password_page(request: Request, token: str, db: Session = Depends(get_db)):
+async def reset_password_page(
+    request: Request, token: str, db: Session = Depends(get_db)
+):
     record = service.verify_reset_token(db, token)
     if not record:
         return templates.TemplateResponse(
             "reset_password.html",
             {"request": request, "error": "Invalid or expired reset link."},
         )
-    return templates.TemplateResponse("reset_password.html", {"request": request, "token": token})
+    return templates.TemplateResponse(
+        "reset_password.html", {"request": request, "token": token}
+    )
 
 
 @router.post("/reset-password/{token}", response_class=HTMLResponse)

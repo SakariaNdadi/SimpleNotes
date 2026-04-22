@@ -14,17 +14,27 @@ router = APIRouter(prefix="/integrations")
 templates = Jinja2Templates(directory="app/templates")
 
 
-def _get_or_create_token(db: Session, user_id: str, provider: str, token_data: dict) -> CalendarToken:
-    record = db.query(CalendarToken).filter(
-        CalendarToken.user_id == user_id,
-        CalendarToken.provider == provider,
-    ).first()
+def _get_or_create_token(
+    db: Session, user_id: str, provider: str, token_data: dict
+) -> CalendarToken:
+    record = (
+        db.query(CalendarToken)
+        .filter(
+            CalendarToken.user_id == user_id,
+            CalendarToken.provider == provider,
+        )
+        .first()
+    )
     if not record:
         record = CalendarToken(user_id=user_id, provider=provider)
         db.add(record)
 
     record.access_token_encrypted = encrypt_value(token_data["access_token"])
-    record.refresh_token_encrypted = encrypt_value(token_data["refresh_token"]) if token_data.get("refresh_token") else None
+    record.refresh_token_encrypted = (
+        encrypt_value(token_data["refresh_token"])
+        if token_data.get("refresh_token")
+        else None
+    )
     record.expires_at = token_data.get("expires_at")
     record.scope = token_data.get("scope")
     db.commit()
@@ -33,9 +43,11 @@ def _get_or_create_token(db: Session, user_id: str, provider: str, token_data: d
 
 # ── Google ────────────────────────────────────────────────────────────────────
 
+
 @router.get("/google/oauth")
 async def google_oauth_start(request: Request, user: User = Depends(require_user)):
     from app.integrations.google import get_auth_url
+
     state = secrets.token_urlsafe(16)
     request.session["oauth_state"] = state
     request.session["oauth_user_id"] = user.id
@@ -50,6 +62,7 @@ async def google_oauth_callback(
     db: Session = Depends(get_db),
 ):
     from app.integrations.google import exchange_code
+
     if not code:
         return RedirectResponse("/?error=google_oauth_failed")
     token_data = exchange_code(code)
@@ -60,9 +73,11 @@ async def google_oauth_callback(
 
 # ── Microsoft ─────────────────────────────────────────────────────────────────
 
+
 @router.get("/microsoft/oauth")
 async def microsoft_oauth_start(request: Request, user: User = Depends(require_user)):
     from app.integrations.microsoft import get_auth_url
+
     state = secrets.token_urlsafe(16)
     request.session["oauth_state"] = state
     request.session["oauth_user_id"] = user.id
@@ -77,6 +92,7 @@ async def microsoft_oauth_callback(
     db: Session = Depends(get_db),
 ):
     from app.integrations.microsoft import exchange_code
+
     if not code:
         return RedirectResponse("/?error=microsoft_oauth_failed")
     token_data = exchange_code(code)
@@ -86,6 +102,7 @@ async def microsoft_oauth_callback(
 
 
 # ── Create task/event ─────────────────────────────────────────────────────────
+
 
 @router.post("/{provider}/create-task", response_class=HTMLResponse)
 async def create_task(
@@ -101,23 +118,39 @@ async def create_task(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    token = db.query(CalendarToken).filter(
-        CalendarToken.user_id == user.id,
-        CalendarToken.provider == provider,
-    ).first()
+    token = (
+        db.query(CalendarToken)
+        .filter(
+            CalendarToken.user_id == user.id,
+            CalendarToken.provider == provider,
+        )
+        .first()
+    )
     if not token:
-        return HTMLResponse(f'<p class="error">{provider} not connected</p>', status_code=400)
+        return HTMLResponse(
+            f'<p class="error">{provider} not connected</p>', status_code=400
+        )
 
     all_day = bool(is_all_day)
     try:
         if provider == "google":
-            from app.integrations.google import create_calendar_event, create_task as g_task
+            from app.integrations.google import (
+                create_calendar_event,
+                create_task as g_task,
+            )
+
             if task_type == "event":
-                create_calendar_event(token, title, description, dt or None, end_dt or None, all_day)
+                create_calendar_event(
+                    token, title, description, dt or None, end_dt or None, all_day
+                )
             else:
                 g_task(token, title, description, dt or None)
         elif provider == "microsoft":
-            from app.integrations.microsoft import create_calendar_event as ms_event, create_task as ms_task
+            from app.integrations.microsoft import (
+                create_calendar_event as ms_event,
+                create_task as ms_task,
+            )
+
             if task_type == "event":
                 ms_event(token, title, description, dt or None, end_dt or None, all_day)
             else:
@@ -127,6 +160,7 @@ async def create_task(
 
     if task_id:
         from app.notes.task_service import set_task_status
+
         set_task_status(db, task_id, user.id, provider)
 
     return HTMLResponse('<p class="success">Created successfully!</p>')

@@ -9,11 +9,20 @@ def get_labels(db: Session, user_id: str) -> list[Label]:
 
 
 def get_label(db: Session, label_id: str, user_id: str) -> Label | None:
-    return db.query(Label).filter(Label.id == label_id, Label.user_id == user_id).first()
+    return (
+        db.query(Label).filter(Label.id == label_id, Label.user_id == user_id).first()
+    )
 
 
-def create_label(db: Session, user_id: str, title: str, description: str, color: str = "") -> Label | str:
-    label = Label(user_id=user_id, title=title.strip(), description=description.strip(), color=color)
+def create_label(
+    db: Session, user_id: str, title: str, description: str, color: str = ""
+) -> Label | str:
+    label = Label(
+        user_id=user_id,
+        title=title.strip(),
+        description=description.strip(),
+        color=color,
+    )
     db.add(label)
     try:
         db.commit()
@@ -24,7 +33,9 @@ def create_label(db: Session, user_id: str, title: str, description: str, color:
         return "Label with that title already exists"
 
 
-def update_label(db: Session, label: Label, title: str, description: str, color: str = "") -> Label | str:
+def update_label(
+    db: Session, label: Label, title: str, description: str, color: str = ""
+) -> Label | str:
     label.title = title.strip()
     label.description = description.strip()
     label.color = color

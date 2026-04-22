@@ -45,6 +45,7 @@ async def get_preferences_panel(
 ):
     prefs = get_or_create_prefs(db, user.id)
     import json as _json
+
     selected_langs = _json.loads(prefs.languages) if prefs.languages else ["en"]
     return templates.TemplateResponse(
         "partials/preferences_panel.html",

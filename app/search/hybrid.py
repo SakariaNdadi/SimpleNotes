@@ -6,7 +6,9 @@ from app.config import get_settings
 from app.models import Note
 
 
-async def hybrid_search(db: Session, user_id: str, query: str, limit: int = 50) -> list[Note]:
+async def hybrid_search(
+    db: Session, user_id: str, query: str, limit: int = 50
+) -> list[Note]:
     from app.search.embeddings import get_embedding
     from app.search.meili import search as meili_search
 
@@ -17,6 +19,7 @@ async def hybrid_search(db: Session, user_id: str, query: str, limit: int = 50) 
 
     if is_postgres and settings.EMBEDDING_MODEL:
         from app.search.vector import similarity_search
+
         embedding = await get_embedding(query)
         if embedding:
             vector_ids = similarity_search(db, user_id, embedding, limit)
@@ -34,16 +37,19 @@ async def hybrid_search(db: Session, user_id: str, query: str, limit: int = 50) 
 
     if not result_ids:
         from app.notes.service import search_notes
+
         return search_notes(db, user_id, query)
 
     notes_by_id = {
         n.id: n
-        for n in db.query(Note).filter(
+        for n in db.query(Note)
+        .filter(
             Note.id.in_(result_ids),
             Note.user_id == user_id,
             Note.is_deleted == False,  # noqa: E712
             Note.is_archived == False,  # noqa: E712
-        ).all()
+        )
+        .all()
     }
     return [notes_by_id[nid] for nid in result_ids if nid in notes_by_id]
 
@@ -65,6 +71,7 @@ async def embed_and_index(note_id: str, user_id: str, description: str) -> None:
         return
 
     from app.search.vector import store_embedding
+
     db = SessionLocal()
     try:
         store_embedding(db, note_id, embedding)

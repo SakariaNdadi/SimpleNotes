@@ -4,6 +4,7 @@ Unit tests for app/auth/utils.py.
 ISTQB techniques: Equivalence Partitioning (EP), Boundary Value Analysis (BVA),
 Error Guessing (EG).
 """
+
 import os
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")

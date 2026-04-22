@@ -6,9 +6,11 @@ from app.models import NoteSummary
 
 
 def get_summary(db: Session, note_id: str, user_id: str) -> NoteSummary | None:
-    return db.query(NoteSummary).filter(
-        NoteSummary.note_id == note_id, NoteSummary.user_id == user_id
-    ).first()
+    return (
+        db.query(NoteSummary)
+        .filter(NoteSummary.note_id == note_id, NoteSummary.user_id == user_id)
+        .first()
+    )
 
 
 def save_summary(db: Session, note_id: str, user_id: str, content: str) -> NoteSummary:

@@ -149,7 +149,9 @@ def test_search_notes_case_insensitive_match(db, unit_user):
 
 def test_search_notes_excludes_deleted(db, unit_user):
     """EP: deleted notes not returned by search."""
-    note = Note(user_id=unit_user.id, description="searchable deleted note", is_deleted=True)
+    note = Note(
+        user_id=unit_user.id, description="searchable deleted note", is_deleted=True
+    )
     db.add(note)
     db.flush()
     results = search_notes(db, unit_user.id, "searchable deleted")
@@ -158,7 +160,9 @@ def test_search_notes_excludes_deleted(db, unit_user):
 
 def test_search_notes_excludes_archived(db, unit_user):
     """EP: archived notes not returned by search."""
-    note = Note(user_id=unit_user.id, description="searchable archived note", is_archived=True)
+    note = Note(
+        user_id=unit_user.id, description="searchable archived note", is_archived=True
+    )
     db.add(note)
     db.flush()
     results = search_notes(db, unit_user.id, "searchable archived")

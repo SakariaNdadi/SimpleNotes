@@ -146,7 +146,9 @@ def get_trash(db: Session, user_id: str) -> list[Note]:
 def get_archive(db: Session, user_id: str) -> list[Note]:
     return (
         db.query(Note)
-        .filter(Note.user_id == user_id, Note.is_archived == True, Note.is_deleted == False)  # noqa: E712
+        .filter(
+            Note.user_id == user_id, Note.is_archived == True, Note.is_deleted == False
+        )  # noqa: E712
         .order_by(Note.updated_at.desc())
         .all()
     )

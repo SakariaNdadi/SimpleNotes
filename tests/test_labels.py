@@ -23,7 +23,9 @@ def test_delete_label(page: Page, base_url, logged_in):
     page.locator("input[name='title']").fill("Label to delete")
     page.locator("form[hx-post='/labels'] button[type='submit']").click()
     expect(page.locator("#label-list")).to_contain_text("Label to delete")
-    label_item = page.locator("#label-list [id^='label-']").filter(has_text="Label to delete")
+    label_item = page.locator("#label-list [id^='label-']").filter(
+        has_text="Label to delete"
+    )
     label_item.hover()
     label_item.locator("button[hx-delete]").click()
     expect(page.locator("#label-list")).not_to_contain_text("Label to delete")

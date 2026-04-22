@@ -13,9 +13,13 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("", response_class=HTMLResponse)
-async def list_labels(request: Request, user: User = Depends(require_user), db: Session = Depends(get_db)):
+async def list_labels(
+    request: Request, user: User = Depends(require_user), db: Session = Depends(get_db)
+):
     labels = service.get_labels(db, user.id)
-    return templates.TemplateResponse("partials/label_list.html", {"request": request, "labels": labels})
+    return templates.TemplateResponse(
+        "partials/label_list.html", {"request": request, "labels": labels}
+    )
 
 
 @router.post("", response_class=HTMLResponse)
@@ -33,7 +37,9 @@ async def create_label(
     if isinstance(result, str):
         return HTMLResponse(f'<p class="error">{result}</p>', status_code=422)
     labels = service.get_labels(db, user.id)
-    return templates.TemplateResponse("partials/label_list.html", {"request": request, "labels": labels})
+    return templates.TemplateResponse(
+        "partials/label_list.html", {"request": request, "labels": labels}
+    )
 
 
 @router.put("/{label_id}", response_class=HTMLResponse)
@@ -54,7 +60,9 @@ async def update_label(
     result = service.update_label(db, label, title, description, color)
     if isinstance(result, str):
         return HTMLResponse(f'<p class="error">{result}</p>', status_code=422)
-    return templates.TemplateResponse("partials/label_item.html", {"request": request, "label": result})
+    return templates.TemplateResponse(
+        "partials/label_item.html", {"request": request, "label": result}
+    )
 
 
 @router.delete("/{label_id}", response_class=HTMLResponse)

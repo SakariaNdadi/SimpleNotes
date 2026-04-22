@@ -6,6 +6,7 @@ Requires live server at http://localhost:8000 and Playwright.
 
 Run with: pytest tests/e2e/test_tasks_full.py --headed
 """
+
 from playwright.sync_api import Page, expect
 from conftest import wait_for_alpine
 
@@ -19,7 +20,9 @@ def _open_tasks_panel(page: Page) -> None:
     toggle = page.locator("#new-task-toggle")
     toggle.wait_for(state="visible", timeout=5000)
     toggle.click()
-    page.locator("form[hx-post='/tasks'] input[name='title']").wait_for(state="visible", timeout=5000)
+    page.locator("form[hx-post='/tasks'] input[name='title']").wait_for(
+        state="visible", timeout=5000
+    )
 
 
 def _create_task(page: Page, title: str) -> None:
@@ -45,7 +48,11 @@ def test_mark_task_done_moves_to_done_section(page: Page, base_url, logged_in):
     wait_for_alpine(page)
     _create_task(page, "Task To Complete")
 
-    task_card = page.locator("#settings-content [id^='task-']").filter(has_text="Task To Complete").first
+    task_card = (
+        page.locator("#settings-content [id^='task-']")
+        .filter(has_text="Task To Complete")
+        .first
+    )
     task_card.locator("button[hx-post*='/done']").click()
     page.wait_for_timeout(800)
 
@@ -58,7 +65,11 @@ def test_delete_task_removed_from_list(page: Page, base_url, logged_in):
     wait_for_alpine(page)
     _create_task(page, "Task To Delete")
 
-    task_card = page.locator("#settings-content [id^='task-']").filter(has_text="Task To Delete").first
+    task_card = (
+        page.locator("#settings-content [id^='task-']")
+        .filter(has_text="Task To Delete")
+        .first
+    )
     task_id = task_card.get_attribute("id")  # e.g. "task-{uuid}"
     uuid = task_id.split("task-", 1)[1] if task_id else None
 
@@ -76,7 +87,9 @@ def test_delete_task_removed_from_list(page: Page, base_url, logged_in):
 
     assert len(delete_responses) > 0, "No DELETE request sent"
     assert delete_responses[0] == 200
-    expect(page.locator("#settings-content")).not_to_contain_text("Task To Delete", timeout=5000)
+    expect(page.locator("#settings-content")).not_to_contain_text(
+        "Task To Delete", timeout=5000
+    )
 
 
 def test_edit_task_title_updated(page: Page, base_url, logged_in):
@@ -85,7 +98,11 @@ def test_edit_task_title_updated(page: Page, base_url, logged_in):
     wait_for_alpine(page)
     _create_task(page, "Task Before Edit")
 
-    task_card = page.locator("#settings-content [id^='task-']").filter(has_text="Task Before Edit").first
+    task_card = (
+        page.locator("#settings-content [id^='task-']")
+        .filter(has_text="Task Before Edit")
+        .first
+    )
     task_card.locator("button[hx-get*='/edit']").click()
 
     title_input = page.locator("form[hx-put*='/tasks/'] input[name='title']")
@@ -114,7 +131,11 @@ def test_task_count_badge_disappears_when_all_deleted(page: Page, base_url, logg
     wait_for_alpine(page)
     _create_task(page, "Only Task For Badge Test")
 
-    task_card = page.locator("#settings-content [id^='task-']").filter(has_text="Only Task For Badge Test").first
+    task_card = (
+        page.locator("#settings-content [id^='task-']")
+        .filter(has_text="Only Task For Badge Test")
+        .first
+    )
     task_id = task_card.get_attribute("id")
     uuid = task_id.split("task-", 1)[1] if task_id else None
 
@@ -123,4 +144,6 @@ def test_task_count_badge_disappears_when_all_deleted(page: Page, base_url, logg
     }})""")
     page.wait_for_timeout(2000)
 
-    expect(page.locator("#settings-content")).not_to_contain_text("Only Task For Badge Test", timeout=5000)
+    expect(page.locator("#settings-content")).not_to_contain_text(
+        "Only Task For Badge Test", timeout=5000
+    )

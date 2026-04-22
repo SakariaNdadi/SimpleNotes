@@ -43,6 +43,7 @@ def _get_nlp():
     if _nlp is None:
         try:
             import spacy as _spacy
+
             _nlp = _spacy.load("en_core_web_sm")
         except Exception:
             _nlp = False
@@ -51,6 +52,7 @@ def _get_nlp():
 
 def _parse_date(text: str) -> str | None:
     import dateparser
+
     parsed = dateparser.parse(
         text,
         settings={"PREFER_DATES_FROM": "future", "RETURN_AS_TIMEZONE_AWARE": False},
@@ -61,6 +63,7 @@ def _parse_date(text: str) -> str | None:
 def _dates_in_text(text: str) -> str | None:
     """Extract first resolvable date/time phrase from free text via dateparser."""
     import dateparser
+
     # Try whole chunk first
     result = dateparser.parse(
         text,
@@ -76,14 +79,19 @@ def _dates_in_text(text: str) -> str | None:
             chunk = " ".join(words[i : i + size])
             r = dateparser.parse(
                 chunk,
-                settings={"PREFER_DATES_FROM": "future", "RETURN_AS_TIMEZONE_AWARE": False},
+                settings={
+                    "PREFER_DATES_FROM": "future",
+                    "RETURN_AS_TIMEZONE_AWARE": False,
+                },
             )
             if r:
                 return r.strftime("%Y-%m-%dT%H:%M")
     return None
 
 
-def _process_chunk(chunk: str, inherited_action: str | None, seen: set[str]) -> dict | None:
+def _process_chunk(
+    chunk: str, inherited_action: str | None, seen: set[str]
+) -> dict | None:
     """Convert a text chunk into a task dict, or None if not actionable."""
     chunk = chunk.strip()
     if not chunk or len(chunk) < 4:
@@ -161,4 +169,6 @@ def extract_tasks(text: str) -> list[dict]:
 
 
 def _is_event(text: str) -> bool:
-    return bool(re.search(r"\b(meeting|appointment|call with|schedule)\b", text, re.IGNORECASE))
+    return bool(
+        re.search(r"\b(meeting|appointment|call with|schedule)\b", text, re.IGNORECASE)
+    )

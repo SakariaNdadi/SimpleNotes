@@ -3,6 +3,7 @@ Extended integration tests for /profile route not covered in test_profile.py.
 
 ISTQB techniques: EP, State Transition, Error Guessing.
 """
+
 import uuid
 
 
@@ -47,6 +48,7 @@ def test_update_email_already_in_use_returns_422(auth_client, db, db_user):
     uid = uuid.uuid4().hex[:8]
     from app.models import User
     from app.auth.utils import hash_password
+
     other = User(
         username=f"other_{uid}",
         email=f"taken_{uid}@example.com",
@@ -67,11 +69,14 @@ def test_update_email_already_in_use_returns_422(auth_client, db, db_user):
 def test_update_password_via_profile(auth_client, db, db_user):
     """EP: valid new_password updates hashed_password in DB."""
     client, user = auth_client
-    r = client.post("/profile", data=_profile_data(
-        user,
-        new_password="NewSecure456!",
-        confirm_password="NewSecure456!",
-    ))
+    r = client.post(
+        "/profile",
+        data=_profile_data(
+            user,
+            new_password="NewSecure456!",
+            confirm_password="NewSecure456!",
+        ),
+    )
     assert r.status_code == 200
 
     db.refresh(user)
@@ -85,10 +90,13 @@ def test_wrong_current_password_returns_422(auth_client, db_user):
     still returns 422 when current password verification fails.
     """
     client, user = auth_client
-    r = client.post("/profile", data=_profile_data(
-        user,
-        current_password="WrongPass999!",
-    ))
+    r = client.post(
+        "/profile",
+        data=_profile_data(
+            user,
+            current_password="WrongPass999!",
+        ),
+    )
     assert r.status_code == 422
 
 
@@ -98,8 +106,11 @@ def test_wrong_current_password_returns_422(auth_client, db_user):
 def test_update_username_invalid_format_returns_422(auth_client, db_user):
     """EP: username with invalid chars → 422."""
     client, user = auth_client
-    r = client.post("/profile", data=_profile_data(
-        user,
-        username="bad user!",
-    ))
+    r = client.post(
+        "/profile",
+        data=_profile_data(
+            user,
+            username="bad user!",
+        ),
+    )
     assert r.status_code == 422

@@ -1,5 +1,3 @@
-
-
 def test_create_note(auth_client):
     client, _ = auth_client
     r = client.post("/notes", data={"description": "Hello integration test"})

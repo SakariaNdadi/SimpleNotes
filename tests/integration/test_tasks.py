@@ -1,5 +1,3 @@
-
-
 def test_tasks_panel(auth_client):
     client, _ = auth_client
     r = client.get("/tasks")

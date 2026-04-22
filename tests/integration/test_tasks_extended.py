@@ -28,11 +28,14 @@ def test_create_task_empty_title_returns_422(auth_client):
 def test_create_task_with_due_datetime(auth_client):
     """EP: task with due_datetime is accepted."""
     client, _ = auth_client
-    r = client.post("/tasks", data={
-        "title": "Scheduled Task",
-        "description": "",
-        "due_datetime": "2026-12-01T10:00",
-    })
+    r = client.post(
+        "/tasks",
+        data={
+            "title": "Scheduled Task",
+            "description": "",
+            "due_datetime": "2026-12-01T10:00",
+        },
+    )
     assert r.status_code == 200
     assert "Scheduled Task" in r.text
 
@@ -46,17 +49,22 @@ def test_create_task_unauthenticated(client):
 # ── Confirm task ──────────────────────────────────────────────────────────────
 
 
-def test_confirm_discovered_task_transitions_to_local(auth_client, db, db_discovered_task):
+def test_confirm_discovered_task_transitions_to_local(
+    auth_client, db, db_discovered_task
+):
     """State Transition: discovered → local via confirm route."""
     client, _ = auth_client
-    r = client.post(f"/tasks/{db_discovered_task.id}/confirm", data={
-        "title": "Confirmed Title",
-        "description": "",
-        "due_datetime": "",
-        "end_datetime": "",
-        "is_all_day": "",
-        "task_type": "task",
-    })
+    r = client.post(
+        f"/tasks/{db_discovered_task.id}/confirm",
+        data={
+            "title": "Confirmed Title",
+            "description": "",
+            "due_datetime": "",
+            "end_datetime": "",
+            "is_all_day": "",
+            "task_type": "task",
+        },
+    )
     assert r.status_code == 200
     db.refresh(db_discovered_task)
     assert db_discovered_task.status == "local"
@@ -67,14 +75,17 @@ def test_confirm_non_discovered_task_status_unchanged(auth_client, db, db_task):
     """Decision Table: confirming a local task leaves status unchanged."""
     client, _ = auth_client
     original_status = db_task.status  # "local"
-    r = client.post(f"/tasks/{db_task.id}/confirm", data={
-        "title": "",
-        "description": "",
-        "due_datetime": "",
-        "end_datetime": "",
-        "is_all_day": "",
-        "task_type": "",
-    })
+    r = client.post(
+        f"/tasks/{db_task.id}/confirm",
+        data={
+            "title": "",
+            "description": "",
+            "due_datetime": "",
+            "end_datetime": "",
+            "is_all_day": "",
+            "task_type": "",
+        },
+    )
     assert r.status_code == 200
     db.refresh(db_task)
     assert db_task.status == original_status
@@ -108,7 +119,9 @@ def test_update_task_status_via_route(auth_client, db, db_task):
 # ── Task filtering ────────────────────────────────────────────────────────────
 
 
-def test_get_tasks_filter_local_shows_local_task(auth_client, db, db_task, db_discovered_task):
+def test_get_tasks_filter_local_shows_local_task(
+    auth_client, db, db_task, db_discovered_task
+):
     """EP: filter=local shows local tasks; discovered are always rendered separately.
 
     The router always fetches and renders discovered tasks regardless of filter.
@@ -124,12 +137,18 @@ def test_get_tasks_filter_google_only(auth_client, db, db_user, db_note):
     """EP: filter=google shows only google-status tasks."""
     client, user = auth_client
     google_task = NoteTask(
-        note_id=db_note.id, user_id=user.id,
-        title="Google synced task", status="google", source="manual",
+        note_id=db_note.id,
+        user_id=user.id,
+        title="Google synced task",
+        status="google",
+        source="manual",
     )
     local_task = NoteTask(
-        note_id=db_note.id, user_id=user.id,
-        title="Plain local task", status="local", source="manual",
+        note_id=db_note.id,
+        user_id=user.id,
+        title="Plain local task",
+        status="local",
+        source="manual",
     )
     db.add_all([google_task, local_task])
     db.flush()

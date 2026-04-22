@@ -32,8 +32,12 @@ class Settings(BaseSettings):
     # Search
     MEILI_URL: str = ""
     MEILI_KEY: str = ""
-    EMBEDDING_MODEL: str = ""  # e.g. "text-embedding-3-small", "ollama/nomic-embed-text"
-    EMBEDDING_DIMENSIONS: int = 1536  # 1536 for OpenAI, 768 for nomic-embed-text, 384 for all-minilm
+    EMBEDDING_MODEL: str = (
+        ""  # e.g. "text-embedding-3-small", "ollama/nomic-embed-text"
+    )
+    EMBEDDING_DIMENSIONS: int = (
+        1536  # 1536 for OpenAI, 768 for nomic-embed-text, 384 for all-minilm
+    )
 
     class Config:
         env_file = ".env"

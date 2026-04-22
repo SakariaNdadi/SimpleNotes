@@ -6,6 +6,7 @@ ISTQB techniques: EP, BVA, Decision Table, Error Guessing.
 Tests for _is_event, _process_chunk, _dates_in_text do not require spaCy.
 Tests for extract_tasks require spaCy en_core_web_sm — skipped if unavailable.
 """
+
 import re
 
 import pytest
@@ -145,6 +146,7 @@ def test_dates_in_text_no_date_returns_none():
 def spacy_available():
     try:
         import spacy
+
         spacy.load("en_core_web_sm")
         return True
     except Exception:
@@ -156,6 +158,7 @@ def test_extract_tasks_trigger_returns_list(spacy_available):
     if not spacy_available:
         pytest.skip("spaCy en_core_web_sm not installed")
     from app.notes.nlp_extractor import extract_tasks
+
     tasks = extract_tasks("I need to submit the quarterly report by Friday.")
     assert isinstance(tasks, list)
     assert len(tasks) >= 1
@@ -167,6 +170,7 @@ def test_extract_tasks_no_tasks_returns_empty(spacy_available):
     if not spacy_available:
         pytest.skip("spaCy en_core_web_sm not installed")
     from app.notes.nlp_extractor import extract_tasks
+
     tasks = extract_tasks("The weather is nice today. I enjoyed the sunrise.")
     assert tasks == []
 
@@ -176,6 +180,7 @@ def test_extract_tasks_compound_sentence_two_tasks(spacy_available):
     if not spacy_available:
         pytest.skip("spaCy en_core_web_sm not installed")
     from app.notes.nlp_extractor import extract_tasks
+
     tasks = extract_tasks("I need to buy milk and then pick up the kids from school.")
     assert len(tasks) >= 1  # at minimum the first task detected
 
@@ -185,6 +190,7 @@ def test_extract_tasks_caps_at_five(spacy_available):
     if not spacy_available:
         pytest.skip("spaCy en_core_web_sm not installed")
     from app.notes.nlp_extractor import extract_tasks
+
     text = (
         "I need to buy milk. I should call the doctor. "
         "Remember to schedule a meeting with Alice. "
@@ -201,6 +207,7 @@ def test_extract_tasks_long_text_no_crash(spacy_available):
     if not spacy_available:
         pytest.skip("spaCy en_core_web_sm not installed")
     from app.notes.nlp_extractor import extract_tasks
+
     long_text = "I need to buy milk. " * 300  # ~6000 chars
     tasks = extract_tasks(long_text)
     assert isinstance(tasks, list)
@@ -209,6 +216,7 @@ def test_extract_tasks_long_text_no_crash(spacy_available):
 def test_extract_tasks_returns_empty_without_spacy(monkeypatch):
     """EP: when spaCy is not available, returns empty list gracefully."""
     import app.notes.nlp_extractor as extractor
+
     monkeypatch.setattr(extractor, "_nlp", False)
     tasks = extractor.extract_tasks("I need to buy milk today.")
     assert tasks == []

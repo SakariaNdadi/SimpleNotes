@@ -20,7 +20,9 @@ templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/profile", response_class=HTMLResponse)
 async def profile_page(request: Request, user: User = Depends(require_user)):
-    return templates.TemplateResponse("partials/profile.html", {"request": request, "user": user})
+    return templates.TemplateResponse(
+        "partials/profile.html", {"request": request, "user": user}
+    )
 
 
 @router.post("/profile", response_class=HTMLResponse)

@@ -68,7 +68,9 @@ def test_verify_email_valid_token(client, db, db_user):
     user, _ = db_user
     raw, hashed = generate_secure_token()
     expires = datetime.now(timezone.utc) + timedelta(hours=24)
-    db.add(EmailVerificationToken(user_id=user.id, token_hash=hashed, expires_at=expires))
+    db.add(
+        EmailVerificationToken(user_id=user.id, token_hash=hashed, expires_at=expires)
+    )
     db.flush()
     r = client.get(f"/verify-email/{raw}")
     assert r.status_code == 200
@@ -91,7 +93,9 @@ def test_reset_password_success(client, db, db_user):
     user, _ = db_user
     raw, hashed = generate_secure_token()
     expires = datetime.now(timezone.utc) + timedelta(hours=1)
-    record = PasswordResetToken(user_id=user.id, token_hash=hashed, expires_at=expires, used=False)
+    record = PasswordResetToken(
+        user_id=user.id, token_hash=hashed, expires_at=expires, used=False
+    )
     db.add(record)
     db.flush()
     r = client.post(

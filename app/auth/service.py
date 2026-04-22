@@ -26,7 +26,12 @@ def get_user_by_id(db: Session, user_id: str) -> User | None:
 
 
 def create_user(db: Session, username: str, email: str, password: str) -> User:
-    user = User(username=username, email=email, hashed_password=hash_password(password), is_verified=True)
+    user = User(
+        username=username,
+        email=email,
+        hashed_password=hash_password(password),
+        is_verified=True,
+    )
     db.add(user)
     db.commit()
     db.refresh(user)

@@ -3,6 +3,7 @@ Extended integration tests for note routes not covered in test_notes.py.
 
 ISTQB techniques: EP, BVA, State Transition, Error Guessing.
 """
+
 import uuid
 
 
@@ -16,14 +17,19 @@ from app.auth.utils import hash_password, create_access_token
 def test_create_note_with_label_id(auth_client, db, db_label):
     """EP: note created with label_id is associated with the label."""
     client, user = auth_client
-    r = client.post("/notes", data={
-        "description": "Labeled note content",
-        "label_id": db_label.id,
-    })
+    r = client.post(
+        "/notes",
+        data={
+            "description": "Labeled note content",
+            "label_id": db_label.id,
+        },
+    )
     assert r.status_code == 200
-    note = db.query(Note).filter(
-        Note.user_id == user.id, Note.description == "Labeled note content"
-    ).first()
+    note = (
+        db.query(Note)
+        .filter(Note.user_id == user.id, Note.description == "Labeled note content")
+        .first()
+    )
     assert note is not None
     assert note.label_id == db_label.id
 
@@ -31,14 +37,19 @@ def test_create_note_with_label_id(auth_client, db, db_label):
 def test_create_note_with_start_datetime(auth_client, db):
     """EP: note with start_datetime stores the value."""
     client, user = auth_client
-    r = client.post("/notes", data={
-        "description": "Event note",
-        "start_datetime": "2026-05-01T10:00",
-    })
+    r = client.post(
+        "/notes",
+        data={
+            "description": "Event note",
+            "start_datetime": "2026-05-01T10:00",
+        },
+    )
     assert r.status_code == 200
-    note = db.query(Note).filter(
-        Note.user_id == user.id, Note.description == "Event note"
-    ).first()
+    note = (
+        db.query(Note)
+        .filter(Note.user_id == user.id, Note.description == "Event note")
+        .first()
+    )
     assert note is not None
     assert note.start_datetime == "2026-05-01T10:00"
 
@@ -46,14 +57,19 @@ def test_create_note_with_start_datetime(auth_client, db):
 def test_create_note_is_all_day_flag(auth_client, db):
     """EP: is_all_day flag is stored when provided."""
     client, user = auth_client
-    r = client.post("/notes", data={
-        "description": "All day event",
-        "is_all_day": "true",
-    })
+    r = client.post(
+        "/notes",
+        data={
+            "description": "All day event",
+            "is_all_day": "true",
+        },
+    )
     assert r.status_code == 200
-    note = db.query(Note).filter(
-        Note.user_id == user.id, Note.description == "All day event"
-    ).first()
+    note = (
+        db.query(Note)
+        .filter(Note.user_id == user.id, Note.description == "All day event")
+        .first()
+    )
     assert note is not None
     assert note.is_all_day is True
 
@@ -67,6 +83,7 @@ def test_get_note_history_after_two_edits(auth_client, db, db_note):
 
     # Set max_edit_history > 0 via preferences
     from app.preferences.service import get_or_create_prefs
+
     prefs = get_or_create_prefs(db, user.id)
     prefs.max_edit_history = 3
     db.flush()
@@ -86,6 +103,7 @@ def test_restore_note_from_history(auth_client, db, db_note):
     client, user = auth_client
 
     from app.preferences.service import get_or_create_prefs
+
     prefs = get_or_create_prefs(db, user.id)
     prefs.max_edit_history = 3
     db.flush()
@@ -125,10 +143,13 @@ def test_get_notes_pagination_offset(auth_client, db, db_user):
 def test_get_notes_filtered_by_label_id(auth_client, db, db_label):
     """EP: label_id query param filters notes."""
     client, user = auth_client
-    client.post("/notes", data={
-        "description": "Note with label",
-        "label_id": db_label.id,
-    })
+    client.post(
+        "/notes",
+        data={
+            "description": "Note with label",
+            "label_id": db_label.id,
+        },
+    )
     client.post("/notes", data={"description": "Note without label"})
 
     r = client.get(f"/notes?label_id={db_label.id}")

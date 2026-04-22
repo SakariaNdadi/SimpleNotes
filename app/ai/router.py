@@ -21,12 +21,15 @@ templates = Jinja2Templates(directory="app/templates")
 
 # ── LLM Settings ─────────────────────────────────────────────────────────────
 
+
 @router.get("/settings/llm", response_class=HTMLResponse)
 async def llm_settings_page(
     request: Request, user: User = Depends(require_user), db: Session = Depends(get_db)
 ):
     configs = db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).all()
-    return templates.TemplateResponse("partials/llm_settings.html", {"request": request, "configs": configs})
+    return templates.TemplateResponse(
+        "partials/llm_settings.html", {"request": request, "configs": configs}
+    )
 
 
 @router.post("/settings/llm", response_class=HTMLResponse)
@@ -39,7 +42,9 @@ async def add_llm_config(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).update({"is_active": False})
+    db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).update(
+        {"is_active": False}
+    )
     config = UserLLMConfig(
         user_id=user.id,
         provider_name=provider_name.strip(),
@@ -54,7 +59,11 @@ async def add_llm_config(
     configs = db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).all()
     return templates.TemplateResponse(
         "partials/llm_settings.html",
-        {"request": request, "configs": configs, "success": "LLM config saved and set as active"},
+        {
+            "request": request,
+            "configs": configs,
+            "success": "LLM config saved and set as active",
+        },
     )
 
 
@@ -65,12 +74,18 @@ async def delete_llm_config(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    config = db.query(UserLLMConfig).filter(UserLLMConfig.id == config_id, UserLLMConfig.user_id == user.id).first()
+    config = (
+        db.query(UserLLMConfig)
+        .filter(UserLLMConfig.id == config_id, UserLLMConfig.user_id == user.id)
+        .first()
+    )
     if config:
         db.delete(config)
         db.commit()
     configs = db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).all()
-    return templates.TemplateResponse("partials/llm_settings.html", {"request": request, "configs": configs})
+    return templates.TemplateResponse(
+        "partials/llm_settings.html", {"request": request, "configs": configs}
+    )
 
 
 @router.get("/settings/llm/{config_id}/edit", response_class=HTMLResponse)
@@ -80,7 +95,11 @@ async def edit_llm_config_form(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    config = db.query(UserLLMConfig).filter(UserLLMConfig.id == config_id, UserLLMConfig.user_id == user.id).first()
+    config = (
+        db.query(UserLLMConfig)
+        .filter(UserLLMConfig.id == config_id, UserLLMConfig.user_id == user.id)
+        .first()
+    )
     if not config:
         return HTMLResponse("Not found", status_code=404)
     return templates.TemplateResponse(
@@ -99,7 +118,11 @@ async def update_llm_config(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    config = db.query(UserLLMConfig).filter(UserLLMConfig.id == config_id, UserLLMConfig.user_id == user.id).first()
+    config = (
+        db.query(UserLLMConfig)
+        .filter(UserLLMConfig.id == config_id, UserLLMConfig.user_id == user.id)
+        .first()
+    )
     if not config:
         return HTMLResponse("Not found", status_code=404)
     config.provider_name = provider_name.strip()
@@ -122,7 +145,11 @@ async def deactivate_llm_config(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    config = db.query(UserLLMConfig).filter(UserLLMConfig.id == config_id, UserLLMConfig.user_id == user.id).first()
+    config = (
+        db.query(UserLLMConfig)
+        .filter(UserLLMConfig.id == config_id, UserLLMConfig.user_id == user.id)
+        .first()
+    )
     if config:
         config.is_active = False
         db.commit()
@@ -139,16 +166,25 @@ async def activate_llm_config(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).update({"is_active": False})
-    config = db.query(UserLLMConfig).filter(UserLLMConfig.id == config_id, UserLLMConfig.user_id == user.id).first()
+    db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).update(
+        {"is_active": False}
+    )
+    config = (
+        db.query(UserLLMConfig)
+        .filter(UserLLMConfig.id == config_id, UserLLMConfig.user_id == user.id)
+        .first()
+    )
     if config:
         config.is_active = True
         db.commit()
     configs = db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).all()
-    return templates.TemplateResponse("partials/llm_settings.html", {"request": request, "configs": configs})
+    return templates.TemplateResponse(
+        "partials/llm_settings.html", {"request": request, "configs": configs}
+    )
 
 
 # ── AI Endpoints ──────────────────────────────────────────────────────────────
+
 
 @router.post("/ai/summary/{note_id}", response_class=HTMLResponse)
 async def summarize_note(
@@ -158,6 +194,7 @@ async def summarize_note(
     db: Session = Depends(get_db),
 ):
     from app.notes.service import get_note
+
     note = get_note(db, note_id, user.id)
     if not note:
         return HTMLResponse("Not found", status_code=404)
@@ -169,18 +206,30 @@ async def summarize_note(
         if existing:
             return templates.TemplateResponse(
                 "partials/ai_summary.html",
-                {"request": request, "summary": existing.content, "note_id": note_id, "saved": True},
+                {
+                    "request": request,
+                    "summary": existing.content,
+                    "note_id": note_id,
+                    "saved": True,
+                },
             )
 
     langs = get_languages(prefs)
-    summary = await ai_service.summarize_note(db, user.id, note.description, languages=langs)
+    summary = await ai_service.summarize_note(
+        db, user.id, note.description, languages=langs
+    )
 
     if prefs.save_ai_summaries:
         save_summary(db, note_id, user.id, summary)
 
     return templates.TemplateResponse(
         "partials/ai_summary.html",
-        {"request": request, "summary": summary, "note_id": note_id, "saved": prefs.save_ai_summaries},
+        {
+            "request": request,
+            "summary": summary,
+            "note_id": note_id,
+            "saved": prefs.save_ai_summaries,
+        },
     )
 
 
@@ -208,11 +257,17 @@ async def ai_search(
     prefs = get_or_create_prefs(db, user.id)
     langs = get_languages(prefs)
 
-    all_notes = db.query(Note).filter(
-        Note.user_id == user.id,
-        Note.is_deleted == False,  # noqa: E712
-        Note.is_archived == False,  # noqa: E712
-    ).order_by(Note.created_at.desc()).limit(100).all()
+    all_notes = (
+        db.query(Note)
+        .filter(
+            Note.user_id == user.id,
+            Note.is_deleted == False,  # noqa: E712
+            Note.is_archived == False,  # noqa: E712
+        )
+        .order_by(Note.created_at.desc())
+        .limit(100)
+        .all()
+    )
 
     hybrid_results = await hybrid_search(db, user.id, query)
     candidates = hybrid_results if hybrid_results else all_notes
@@ -247,6 +302,7 @@ async def detect_tasks(
     db: Session = Depends(get_db),
 ):
     from app.notes.service import get_note
+
     note = get_note(db, note_id, user.id)
     if not note:
         return HTMLResponse("")
@@ -255,10 +311,16 @@ async def detect_tasks(
         return HTMLResponse("")
     save_tasks(db, user.id, note_id, tasks)
     from app.models import CalendarToken
+
     connected = db.query(CalendarToken).filter(CalendarToken.user_id == user.id).all()
     providers = [t.provider for t in connected]
     return templates.TemplateResponse(
         "partials/task_prompt.html",
-        {"request": request, "tasks": tasks, "note_id": note_id, "providers": providers},
+        {
+            "request": request,
+            "tasks": tasks,
+            "note_id": note_id,
+            "providers": providers,
+        },
         headers={"HX-Trigger": "taskCountChanged"},
     )

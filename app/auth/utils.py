@@ -43,8 +43,12 @@ def validate_password(password: str) -> str | None:
 
 def create_access_token(user_id: str) -> str:
     settings = get_settings()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return jwt.encode({"sub": user_id, "exp": expire}, settings.SECRET_KEY, algorithm="HS256")
+    expire = datetime.now(timezone.utc) + timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+    return jwt.encode(
+        {"sub": user_id, "exp": expire}, settings.SECRET_KEY, algorithm="HS256"
+    )
 
 
 def decode_access_token(token: str) -> str | None:
@@ -79,7 +83,7 @@ def _get_fernet() -> Fernet:
         raise ValueError(
             "FERNET_KEY in .env is invalid. "
             "Generate one with: "
-            "python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+            'python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
         ) from exc
 
 
@@ -89,6 +93,7 @@ def encrypt_value(value: str) -> str:
 
 def decrypt_value(encrypted: str) -> str:
     from cryptography.fernet import InvalidToken
+
     try:
         return _get_fernet().decrypt(encrypted.encode()).decode()
     except InvalidToken:

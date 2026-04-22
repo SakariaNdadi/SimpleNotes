@@ -69,10 +69,18 @@ async def create_task_route(
     db: Session = Depends(get_db),
 ):
     if not title.strip():
-        return HTMLResponse('<p class="text-[11px] text-red-500">Title required</p>', status_code=422)
+        return HTMLResponse(
+            '<p class="text-[11px] text-red-500">Title required</p>', status_code=422
+        )
     task = create_task(
-        db, user.id, title.strip(), description,
-        task_type, due_datetime or None, end_datetime or None, bool(is_all_day),
+        db,
+        user.id,
+        title.strip(),
+        description,
+        task_type,
+        due_datetime or None,
+        end_datetime or None,
+        bool(is_all_day),
     )
     providers = [
         t.provider
@@ -113,7 +121,11 @@ async def confirm_task_route(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    task = db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user.id).first()
+    task = (
+        db.query(NoteTask)
+        .filter(NoteTask.id == task_id, NoteTask.user_id == user.id)
+        .first()
+    )
     if task and task.status == "discovered":
         if title.strip():
             task.title = title.strip()
@@ -178,7 +190,11 @@ async def edit_task_form(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    task = db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user.id).first()
+    task = (
+        db.query(NoteTask)
+        .filter(NoteTask.id == task_id, NoteTask.user_id == user.id)
+        .first()
+    )
     if not task:
         return HTMLResponse("Not found", status_code=404)
     providers = [
@@ -205,8 +221,15 @@ async def update_task_route(
     db: Session = Depends(get_db),
 ):
     task = update_task(
-        db, task_id, user.id, title, description,
-        due_datetime or None, end_datetime or None, bool(is_all_day), task_type,
+        db,
+        task_id,
+        user.id,
+        title,
+        description,
+        due_datetime or None,
+        end_datetime or None,
+        bool(is_all_day),
+        task_type,
     )
     if not task:
         return HTMLResponse("Not found", status_code=404)

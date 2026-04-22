@@ -1,4 +1,5 @@
 """Google Calendar & Tasks integration via OAuth2."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -34,7 +35,9 @@ def get_auth_url(state: str) -> str:
         scopes=SCOPES,
     )
     flow.redirect_uri = f"{settings.APP_BASE_URL}{REDIRECT_URI_PATH}"
-    url, _ = flow.authorization_url(access_type="offline", include_granted_scopes="true", state=state)
+    url, _ = flow.authorization_url(
+        access_type="offline", include_granted_scopes="true", state=state
+    )
     return url
 
 
@@ -69,7 +72,9 @@ def _get_creds(token: CalendarToken) -> Credentials:
     settings = get_settings()
     return Credentials(
         token=decrypt_value(token.access_token_encrypted),
-        refresh_token=decrypt_value(token.refresh_token_encrypted) if token.refresh_token_encrypted else None,
+        refresh_token=decrypt_value(token.refresh_token_encrypted)
+        if token.refresh_token_encrypted
+        else None,
         token_uri="https://oauth2.googleapis.com/token",
         client_id=settings.GOOGLE_CLIENT_ID,
         client_secret=settings.GOOGLE_CLIENT_SECRET,
@@ -86,6 +91,7 @@ def create_calendar_event(
     is_all_day: bool = False,
 ) -> dict:
     from datetime import timedelta
+
     creds = _get_creds(token)
     service = build("calendar", "v3", credentials=creds)
     event = {"summary": title, "description": description}
@@ -105,7 +111,9 @@ def create_calendar_event(
     return service.events().insert(calendarId="primary", body=event).execute()
 
 
-def create_task(token: CalendarToken, title: str, description: str, due: str | None) -> dict:
+def create_task(
+    token: CalendarToken, title: str, description: str, due: str | None
+) -> dict:
     creds = _get_creds(token)
     service = build("tasks", "v1", credentials=creds)
     task = {"title": title, "notes": description}

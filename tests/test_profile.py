@@ -18,13 +18,17 @@ def test_update_username(page: Page, base_url, logged_in):
     _go_to_profile(page, base_url, logged_in)
     new_username = f"updated_{uuid.uuid4().hex[:6]}"
     page.locator("#settings-content input[name='username']").fill(new_username)
-    page.locator("#settings-content input[name='current_password']").fill(logged_in["password"])
+    page.locator("#settings-content input[name='current_password']").fill(
+        logged_in["password"]
+    )
     page.locator("#settings-content button[type='submit']").click()
     expect(page.locator("text=Profile updated")).to_be_visible()
 
 
 def test_wrong_current_password(page: Page, base_url, logged_in):
     _go_to_profile(page, base_url, logged_in)
-    page.locator("#settings-content input[name='current_password']").fill("WrongPassword999!")
+    page.locator("#settings-content input[name='current_password']").fill(
+        "WrongPassword999!"
+    )
     page.locator("#settings-content button[type='submit']").click()
     expect(page.locator("text=Incorrect current password")).to_be_visible()

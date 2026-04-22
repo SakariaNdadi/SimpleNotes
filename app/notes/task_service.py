@@ -41,7 +41,9 @@ def save_tasks(
     source: str = "llm",
     status: str = "local",
 ) -> list[NoteTask]:
-    db.query(NoteTask).filter(NoteTask.note_id == note_id, NoteTask.source == source).delete()
+    db.query(NoteTask).filter(
+        NoteTask.note_id == note_id, NoteTask.source == source
+    ).delete()
     saved = []
     for t in tasks:
         task = NoteTask(
@@ -86,7 +88,11 @@ def get_discovered_tasks(db: Session, user_id: str) -> list[NoteTask]:
 
 
 def confirm_task(db: Session, task_id: str, user_id: str) -> NoteTask | None:
-    task = db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user_id).first()
+    task = (
+        db.query(NoteTask)
+        .filter(NoteTask.id == task_id, NoteTask.user_id == user_id)
+        .first()
+    )
     if task and task.status == "discovered":
         task.status = "local"
         db.commit()
@@ -94,12 +100,20 @@ def confirm_task(db: Session, task_id: str, user_id: str) -> NoteTask | None:
 
 
 def dismiss_task(db: Session, task_id: str, user_id: str) -> None:
-    db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user_id).delete()
+    db.query(NoteTask).filter(
+        NoteTask.id == task_id, NoteTask.user_id == user_id
+    ).delete()
     db.commit()
 
 
-def set_task_status(db: Session, task_id: str, user_id: str, status: str) -> NoteTask | None:
-    task = db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user_id).first()
+def set_task_status(
+    db: Session, task_id: str, user_id: str, status: str
+) -> NoteTask | None:
+    task = (
+        db.query(NoteTask)
+        .filter(NoteTask.id == task_id, NoteTask.user_id == user_id)
+        .first()
+    )
     if task:
         task.status = status
         db.commit()
@@ -107,7 +121,11 @@ def set_task_status(db: Session, task_id: str, user_id: str, status: str) -> Not
 
 
 def mark_task_done(db: Session, task_id: str, user_id: str) -> NoteTask | None:
-    task = db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user_id).first()
+    task = (
+        db.query(NoteTask)
+        .filter(NoteTask.id == task_id, NoteTask.user_id == user_id)
+        .first()
+    )
     if task:
         task.is_done = True
         db.commit()
@@ -115,7 +133,11 @@ def mark_task_done(db: Session, task_id: str, user_id: str) -> NoteTask | None:
 
 
 def unmark_task_done(db: Session, task_id: str, user_id: str) -> NoteTask | None:
-    task = db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user_id).first()
+    task = (
+        db.query(NoteTask)
+        .filter(NoteTask.id == task_id, NoteTask.user_id == user_id)
+        .first()
+    )
     if task:
         task.is_done = False
         db.commit()
@@ -133,7 +155,11 @@ def update_task(
     is_all_day: bool,
     task_type: str,
 ) -> NoteTask | None:
-    task = db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user_id).first()
+    task = (
+        db.query(NoteTask)
+        .filter(NoteTask.id == task_id, NoteTask.user_id == user_id)
+        .first()
+    )
     if task:
         task.title = title[:500]
         task.description = description
@@ -148,7 +174,9 @@ def update_task(
 
 
 def delete_task(db: Session, task_id: str, user_id: str) -> None:
-    db.query(NoteTask).filter(NoteTask.id == task_id, NoteTask.user_id == user_id).delete()
+    db.query(NoteTask).filter(
+        NoteTask.id == task_id, NoteTask.user_id == user_id
+    ).delete()
     db.commit()
 
 

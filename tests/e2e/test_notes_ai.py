@@ -10,6 +10,7 @@ page.evaluate() before interacting.
 
 Run with: pytest tests/e2e/test_notes_ai.py --headed
 """
+
 import pytest
 from playwright.sync_api import Page, expect
 from conftest import wait_for_alpine
@@ -58,7 +59,9 @@ def test_keyword_search_returns_results(page: Page, base_url, logged_in):
     expect(page.locator("#note-feed")).to_contain_text("xplorer9", timeout=5000)
 
 
-def test_ai_search_button_visible_when_ai_enabled_and_query_present(page: Page, base_url, logged_in):
+def test_ai_search_button_visible_when_ai_enabled_and_query_present(
+    page: Page, base_url, logged_in
+):
     """EP: AI search button appears when aiEnabled=true and query is filled."""
     page.goto(f"{base_url}/")
     wait_for_alpine(page)
@@ -146,7 +149,9 @@ def test_note_summary_button_sends_request(page: Page, base_url, logged_in):
         summary_btn.dispatch_event("click")
         page.wait_for_timeout(5000)
         if len(summary_responses) == 0:
-            pytest.skip("Summary button clicked but no HTMX request fired — LLM config may be required")
+            pytest.skip(
+                "Summary button clicked but no HTMX request fired — LLM config may be required"
+            )
         assert summary_responses[0] == 200
     else:
         pytest.skip("Summary button not visible — AI may not be enabled")

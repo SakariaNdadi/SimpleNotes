@@ -12,7 +12,9 @@ def store_embedding(db: Session, note_id: str, embedding: list[float]) -> None:
     db.commit()
 
 
-def similarity_search(db: Session, user_id: str, embedding: list[float], limit: int = 50) -> list[str]:
+def similarity_search(
+    db: Session, user_id: str, embedding: list[float], limit: int = 50
+) -> list[str]:
     rows = db.execute(
         text("""
             SELECT id FROM notes

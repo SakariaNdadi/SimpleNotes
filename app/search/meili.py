@@ -24,9 +24,16 @@ def setup_index() -> None:
         pass
     client.index(_INDEX).update_filterable_attributes(["user_id"])
     client.index(_INDEX).update_searchable_attributes(["description"])
-    client.index(_INDEX).update_ranking_rules([
-        "words", "typo", "proximity", "attribute", "sort", "exactness",
-    ])
+    client.index(_INDEX).update_ranking_rules(
+        [
+            "words",
+            "typo",
+            "proximity",
+            "attribute",
+            "sort",
+            "exactness",
+        ]
+    )
 
 
 def index_note(note_id: str, user_id: str, description: str) -> None:
@@ -34,11 +41,15 @@ def index_note(note_id: str, user_id: str, description: str) -> None:
     if not client:
         return
     try:
-        client.index(_INDEX).add_documents([{
-            "id": note_id,
-            "user_id": user_id,
-            "description": description,
-        }])
+        client.index(_INDEX).add_documents(
+            [
+                {
+                    "id": note_id,
+                    "user_id": user_id,
+                    "description": description,
+                }
+            ]
+        )
     except Exception:
         pass
 
@@ -58,10 +69,13 @@ def search(query: str, user_id: str, limit: int = 50) -> list[str]:
     if not client:
         return []
     try:
-        result = client.index(_INDEX).search(query, {
-            "filter": f'user_id = "{user_id}"',
-            "limit": limit,
-        })
+        result = client.index(_INDEX).search(
+            query,
+            {
+                "filter": f'user_id = "{user_id}"',
+                "limit": limit,
+            },
+        )
         return [hit["id"] for hit in result["hits"]]
     except Exception:
         return []

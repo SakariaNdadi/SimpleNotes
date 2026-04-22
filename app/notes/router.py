@@ -58,9 +58,14 @@ async def create_note(
     db: Session = Depends(get_db),
 ):
     if not description.strip():
-        return HTMLResponse('<p class="error">Note cannot be empty</p>', status_code=422)
+        return HTMLResponse(
+            '<p class="error">Note cannot be empty</p>', status_code=422
+        )
     note = service.create_note(
-        db, user.id, description.strip(), label_id or None,
+        db,
+        user.id,
+        description.strip(),
+        label_id or None,
         start_datetime=start_datetime or None,
         end_datetime=end_datetime or None,
         is_all_day=bool(is_all_day),
@@ -71,7 +76,13 @@ async def create_note(
     providers = _connected_providers(db, user.id)
     return templates.TemplateResponse(
         "partials/note_timeline_item.html",
-        {"request": request, "note": note, "labels": labels, "discovered_tasks": discovered, "providers": providers},
+        {
+            "request": request,
+            "note": note,
+            "labels": labels,
+            "discovered_tasks": discovered,
+            "providers": providers,
+        },
         headers={"HX-Trigger": "noteCreated"},
     )
 
@@ -84,6 +95,7 @@ async def search_notes_local(
     db: Session = Depends(get_db),
 ):
     from app.labels.service import get_labels
+
     results = service.search_notes(db, user.id, query.strip()) if query.strip() else []
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
@@ -110,7 +122,8 @@ async def trash_feed(
     notes = service.get_trash(db, user.id)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
-        "partials/trash_list.html", {"request": request, "notes": notes, "labels": labels}
+        "partials/trash_list.html",
+        {"request": request, "notes": notes, "labels": labels},
     )
 
 
@@ -123,7 +136,8 @@ async def archive_feed(
     notes = service.get_archive(db, user.id)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
-        "partials/archive_list.html", {"request": request, "notes": notes, "labels": labels}
+        "partials/archive_list.html",
+        {"request": request, "notes": notes, "labels": labels},
     )
 
 
@@ -139,7 +153,8 @@ async def get_note_card(
         return HTMLResponse("Not found", status_code=404)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
-        "partials/note_timeline_item.html", {"request": request, "note": note, "labels": labels}
+        "partials/note_timeline_item.html",
+        {"request": request, "note": note, "labels": labels},
     )
 
 
@@ -155,7 +170,8 @@ async def edit_note_form(
         return HTMLResponse("Not found", status_code=404)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
-        "partials/note_edit_form.html", {"request": request, "note": note, "labels": labels}
+        "partials/note_edit_form.html",
+        {"request": request, "note": note, "labels": labels},
     )
 
 
@@ -195,10 +211,16 @@ async def update_note(
     if not note:
         return HTMLResponse("Not found", status_code=404)
     if not description.strip():
-        return HTMLResponse('<p class="error">Note cannot be empty</p>', status_code=422)
+        return HTMLResponse(
+            '<p class="error">Note cannot be empty</p>', status_code=422
+        )
     prefs = get_or_create_prefs(db, user.id)
     note = service.update_note(
-        db, note, description.strip(), label_id or None, max_history=prefs.max_edit_history,
+        db,
+        note,
+        description.strip(),
+        label_id or None,
+        max_history=prefs.max_edit_history,
         start_datetime=start_datetime or None,
         end_datetime=end_datetime or None,
         is_all_day=bool(is_all_day),
@@ -209,7 +231,13 @@ async def update_note(
     providers = _connected_providers(db, user.id)
     return templates.TemplateResponse(
         "partials/note_timeline_item.html",
-        {"request": request, "note": note, "labels": labels, "discovered_tasks": discovered, "providers": providers}
+        {
+            "request": request,
+            "note": note,
+            "labels": labels,
+            "discovered_tasks": discovered,
+            "providers": providers,
+        },
     )
 
 
@@ -258,6 +286,7 @@ async def permanent_delete(
     db: Session = Depends(get_db),
 ):
     from app.search.meili import delete_note as meili_delete
+
     note = service.get_note_any(db, note_id, user.id)
     if note:
         service.delete_note(db, note)
@@ -274,11 +303,15 @@ async def restore_from_history(
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    entry = db.query(NoteHistory).filter(
-        NoteHistory.id == history_id,
-        NoteHistory.note_id == note_id,
-        NoteHistory.user_id == user.id,
-    ).first()
+    entry = (
+        db.query(NoteHistory)
+        .filter(
+            NoteHistory.id == history_id,
+            NoteHistory.note_id == note_id,
+            NoteHistory.user_id == user.id,
+        )
+        .first()
+    )
     note = service.get_note(db, note_id, user.id)
     if not entry or not note:
         return HTMLResponse("Not found", status_code=404)
@@ -289,19 +322,25 @@ async def restore_from_history(
     background_tasks.add_task(embed_and_index, note.id, user.id, note.description)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
-        "partials/note_timeline_item.html", {"request": request, "note": note, "labels": labels, "discovered_tasks": []}
+        "partials/note_timeline_item.html",
+        {"request": request, "note": note, "labels": labels, "discovered_tasks": []},
     )
 
 
 def _connected_providers(db, user_id: str) -> list[str]:
-    return [t.provider for t in db.query(CalendarToken).filter(CalendarToken.user_id == user_id).all()]
+    return [
+        t.provider
+        for t in db.query(CalendarToken).filter(CalendarToken.user_id == user_id).all()
+    ]
 
 
 def _nlp_discover(db, user_id: str, note_id: str, text: str) -> list:
     try:
         tasks = extract_tasks(text)
         if tasks:
-            return save_tasks(db, user_id, note_id, tasks, source="nlp", status="discovered")
+            return save_tasks(
+                db, user_id, note_id, tasks, source="nlp", status="discovered"
+            )
     except Exception:
         pass
     return []

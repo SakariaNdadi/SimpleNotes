@@ -1,4 +1,5 @@
 """Microsoft Graph Calendar & To Do integration via OAuth2 (MSAL)."""
+
 from __future__ import annotations
 
 import httpx
@@ -63,6 +64,7 @@ def create_calendar_event(
     is_all_day: bool = False,
 ) -> dict:
     from datetime import datetime, timedelta, timezone
+
     if is_all_day:
         start_date = dt[:10] if dt else datetime.now(timezone.utc).date().isoformat()
         end_date = end_dt[:10] if end_dt else start_date
@@ -92,8 +94,13 @@ def create_calendar_event(
         return resp.json()
 
 
-def create_task(token: CalendarToken, title: str, description: str, due: str | None) -> dict:
-    body: dict = {"title": title, "body": {"content": description, "contentType": "text"}}
+def create_task(
+    token: CalendarToken, title: str, description: str, due: str | None
+) -> dict:
+    body: dict = {
+        "title": title,
+        "body": {"content": description, "contentType": "text"},
+    }
     if due:
         body["dueDateTime"] = {"dateTime": due, "timeZone": "UTC"}
     with httpx.Client() as client:

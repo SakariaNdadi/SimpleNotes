@@ -77,4 +77,6 @@ def test_search_notes(page: Page, base_url, logged_in):
     page.fill("textarea[name='description']", "Unique searchable content xyz123")
     page.keyboard.press("Control+Enter")
     page.locator("input[name='query']").fill("xyz123")
-    expect(page.locator("#note-feed")).to_contain_text("Unique searchable content xyz123")
+    expect(page.locator("#note-feed")).to_contain_text(
+        "Unique searchable content xyz123"
+    )
