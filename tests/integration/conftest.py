@@ -105,3 +105,46 @@ def db_task(db, db_user, db_note):
     db.add(task)
     db.flush()
     return task
+
+
+@pytest.fixture
+def db_label(db, db_user):
+    from app.models import Label
+    user, _ = db_user
+    label = Label(user_id=user.id, title="Test Label", color="#aabbcc")
+    db.add(label)
+    db.flush()
+    return label
+
+
+@pytest.fixture
+def db_llm_config(db, db_user):
+    from app.models import UserLLMConfig
+    from app.auth.utils import encrypt_value
+    user, _ = db_user
+    config = UserLLMConfig(
+        user_id=user.id,
+        provider_name="openai",
+        model_name="gpt-4o-mini",
+        api_key_encrypted=encrypt_value("sk-fake-key"),
+        is_active=True,
+    )
+    db.add(config)
+    db.flush()
+    return config
+
+
+@pytest.fixture
+def db_discovered_task(db, db_user, db_note):
+    from app.models import NoteTask
+    user, _ = db_user
+    task = NoteTask(
+        note_id=db_note.id,
+        user_id=user.id,
+        title="Discovered task",
+        status="discovered",
+        source="nlp",
+    )
+    db.add(task)
+    db.flush()
+    return task
