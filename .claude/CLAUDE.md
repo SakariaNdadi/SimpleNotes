@@ -60,6 +60,18 @@ pytest tests/test_tasks_e2e.py       # legacy e2e tasks
 pytest tests/test_notes.py           # legacy e2e notes
 ```
 
+### GitHub Actions
+`.github/workflows/ci.yml` — runs on every push/PR to `dev`, `main`:
+- `lint`: ruff check + format check
+- `unit`: unit tests (SQLite, no services)
+- `integration`: integration tests against pgvector/pgvector:pg17 service container
+
+`.github/workflows/e2e.yml` — runs on push/PR to `main` and manual dispatch:
+- Starts a PostgreSQL service container, spins up the dev server, runs Playwright E2E tests
+- Uploads Playwright report as an artifact on failure
+
+`CI_FERNET_KEY` repository secret is optional — a fresh key is generated per run if not set.
+
 ### Known Behavioural Quirks (verified in tests)
 
 **`_save_history` with `max_history=1`**: Net result is 0 history entries. The service adds first, then counts (autoflush: count=1), then prunes `count - max_history + 1 = 1` entries. Test must assert `count == 0`.
