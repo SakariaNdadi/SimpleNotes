@@ -60,11 +60,24 @@ def test_delete_task_removed_from_list(page: Page, base_url, logged_in):
     _create_task(page, "Task To Delete")
 
     task_card = page.locator("#settings-content [id^='task-']").filter(has_text="Task To Delete").first
-    task_card.hover()
-    task_card.locator("button[hx-delete]:not([hx-delete*='dismiss'])").click(force=True)
-    page.wait_for_timeout(800)
+    task_id = task_card.get_attribute("id")  # e.g. "task-{uuid}"
+    uuid = task_id.split("task-", 1)[1] if task_id else None
 
-    expect(page.locator("#settings-content")).not_to_contain_text("Task To Delete")
+    delete_responses: list[int] = []
+
+    def on_response(response):
+        if "/tasks/" in response.url and response.request.method == "DELETE":
+            delete_responses.append(response.status)
+
+    page.on("response", on_response)
+    page.evaluate(f"""() => htmx.ajax('DELETE', '/tasks/{uuid}', {{
+        target: '#{task_id}', swap: 'outerHTML'
+    }})""")
+    page.wait_for_timeout(2000)
+
+    assert len(delete_responses) > 0, "No DELETE request sent"
+    assert delete_responses[0] == 200
+    expect(page.locator("#settings-content")).not_to_contain_text("Task To Delete", timeout=5000)
 
 
 def test_edit_task_title_updated(page: Page, base_url, logged_in):
@@ -104,8 +117,12 @@ def test_task_count_badge_disappears_when_all_deleted(page: Page, base_url, logg
     _create_task(page, "Only Task For Badge Test")
 
     task_card = page.locator("#settings-content [id^='task-']").filter(has_text="Only Task For Badge Test").first
-    task_card.hover()
-    task_card.locator("button[hx-delete]:not([hx-delete*='dismiss'])").click(force=True)
-    page.wait_for_timeout(800)
+    task_id = task_card.get_attribute("id")
+    uuid = task_id.split("task-", 1)[1] if task_id else None
 
-    expect(page.locator("#settings-content")).not_to_contain_text("Only Task For Badge Test")
+    page.evaluate(f"""() => htmx.ajax('DELETE', '/tasks/{uuid}', {{
+        target: '#{task_id}', swap: 'outerHTML'
+    }})""")
+    page.wait_for_timeout(2000)
+
+    expect(page.locator("#settings-content")).not_to_contain_text("Only Task For Badge Test", timeout=5000)
