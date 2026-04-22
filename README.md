@@ -1,20 +1,96 @@
-# Notes
+# SimpleNotes
 
-Self-hosted, open-source notes app with AI search/summary, calendar integrations, and full auth.
+A self-hosted, open-source notes app with AI search, per-note summaries, automatic task detection, and calendar integrations — built for privacy-first users who want full control over their data.
 
 **Stack:** FastAPI · HTMX · Alpine.js · SQLite (dev) · PostgreSQL + pgvector (prod) · LiteLLM · Docker
+
+---
+
+## Why SimpleNotes?
+
+Most notes apps either lock your data in the cloud or cost money for AI features. SimpleNotes runs on your own server, stores your notes in your own database, and lets you bring any LLM — including fully local ones via Ollama — for AI features. No subscriptions, no telemetry, no vendor lock-in.
+
+---
+
+## Features
+
+### Notes
+- Create, edit, and delete notes from a single-page feed
+- Infinite scroll with real-time search
+- Notes show an "Edited" badge after modification
+- Version history — restore any previous version of a note
+- Soft delete with a trash/restore flow; permanent delete available
+- Archive notes to keep the feed clean without deleting
+
+### Labels
+- Create colour-coded labels with titles and descriptions
+- Attach a label to any note
+- Filter the note feed by label
+
+### AI (bring your own LLM)
+- **Semantic search** — query your notes with natural language; uses pgvector embeddings in production and keyword fallback in dev
+- **Per-note summaries** — generate and cache an AI summary for any note with one click; delete the cache to regenerate
+- **Automatic task detection** — the app analyses note content with spaCy NLP and an LLM call to surface tasks buried in your notes as discovered items
+
+Configure any LLM provider in Settings → AI / LLM:
+
+| Provider | Notes |
+|----------|-------|
+| OpenAI (`gpt-4o`, etc.) | Cloud, paid |
+| Anthropic (`claude-sonnet-4-6`, etc.) | Cloud, paid |
+| Google Gemini | Cloud, free tier available |
+| Ollama (`gemma3`, `llama3.2`, `deepseek-r1`, etc.) | **Fully local, free** |
+| Any OpenAI-compatible endpoint | llama.cpp, vLLM, LM Studio, Jan, etc. |
+
+API keys are encrypted at rest with Fernet symmetric encryption and never exposed in the UI after saving. See [docs/llm-config.md](docs/llm-config.md) for full setup.
+
+### Tasks
+- Create tasks manually from the sidebar panel
+- Tasks discovered from note content appear as a separate "discovered" list for review
+- Confirm a discovered task to promote it to your active list, or dismiss it
+- Mark tasks done, edit titles and descriptions, set due dates
+- Tasks sync bidirectionally with Google Tasks and Microsoft To Do (via OAuth)
+
+### Calendar Integrations
+- Connect Google Calendar and Google Tasks via OAuth
+- Connect Microsoft Calendar and Microsoft To Do via OAuth
+- Integrations surface in Settings → Integrations; disconnect any time
+
+### Auth
+- Register with email and password
+- Email verification (link printed to console in dev; real SMTP in prod)
+- Login with remember-me JWT cookie (7-day default, configurable)
+- Forgot/reset password flow via email
+- Profile page: change username, email, or password
+- Changing email re-triggers verification
+
+### Privacy & Self-Hosting
+- All data lives in your database — SQLite locally, PostgreSQL in production
+- No external analytics, no tracking, no phone-home
+- Bring your own domain and TLS
+- LLM calls go directly from your server to your chosen provider — no intermediary
 
 ---
 
 ## Quick Start (Dev)
 
 ```bash
-cp .env.example .env          # configure as needed
+# 1. Clone
+git clone https://github.com/SakariaNdadi/notes.git && cd notes
+
+# 2. Configure environment
+cp .env.example .env
+
+# 3. Set a strong SECRET_KEY in .env (used to sign JWT tokens)
+
+# 4. Install dependencies
 uv sync
+
+# 5. Start the server
 uv run uvicorn main:app --reload
 ```
 
-Open http://localhost:8000 — register, verify (link printed to console in dev), log in.
+Open [http://localhost:8000](http://localhost:8000), register, and click the verification link printed to your terminal.
 
 ## Docker (Dev)
 
@@ -26,33 +102,45 @@ docker compose up
 ## Docker (Production)
 
 ```bash
-cp .env.example .env          # fill in all values
+cp .env.example .env   # fill in all values — see docs/env.md
 cd docker
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-See [docs/setup.md](docs/setup.md) for full production setup.
+Production stack includes PostgreSQL + pgvector, nginx reverse proxy, and pgAdmin. See [docs/setup.md](docs/setup.md) for TLS configuration and full production checklist.
 
 ---
 
-## Features
-
-- **Auth** — register, email verification, login, forgot/reset password, profile management
-- **Notes** — create, edit (shows "Edited" badge), delete, infinite scroll feed
-- **Labels** — organise notes with titled/described labels, filter feed by label
-- **AI** — semantic search, per-note summaries, automatic task detection from note content
-- **Self-hosted LLMs** — connect Ollama (Gemma, DeepSeek, Llama), any OpenAI-compatible endpoint, or cloud APIs
-- **Calendar integrations** — Google Calendar/Tasks and Microsoft Calendar/To Do via OAuth
-- **Single-page UI** — Gemini-style interface, sidebar navigation, no page reloads
-
----
-
-## Docs
+## Documentation
 
 | Document | Description |
 |----------|-------------|
-| [docs/setup.md](docs/setup.md) | Full installation & configuration guide |
-| [docs/env.md](docs/env.md) | All environment variables |
-| [docs/llm-config.md](docs/llm-config.md) | LLM setup (Ollama, OpenAI, Anthropic, etc.) |
-| [docs/integrations.md](docs/integrations.md) | Google & Microsoft OAuth setup |
+| [docs/setup.md](docs/setup.md) | Full installation and configuration guide |
+| [docs/env.md](docs/env.md) | All environment variables with defaults |
+| [docs/llm-config.md](docs/llm-config.md) | LLM setup — Ollama, OpenAI, Anthropic, custom endpoints |
+| [docs/integrations.md](docs/integrations.md) | Google and Microsoft OAuth setup |
 | [docs/api.md](docs/api.md) | API reference |
+
+---
+
+## Dev vs Prod
+
+| Feature | Dev (SQLite) | Prod (PostgreSQL) |
+|---------|-------------|-------------------|
+| Database | SQLite file | PostgreSQL + pgvector |
+| AI search | Keyword (LIKE) | Semantic (pgvector embeddings) |
+| Password reset | Link in console | Real SMTP required |
+| Email verification | Link in console | Real SMTP required |
+| OAuth integrations | Requires real credentials | Requires real credentials |
+
+---
+
+## Contributing
+
+Contributions are welcome — bugs, features, docs, and tests. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, test commands, and guidelines.
+
+---
+
+## License
+
+MIT. See [LICENSE](LICENSE).
