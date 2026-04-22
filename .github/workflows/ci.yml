@@ -76,7 +76,6 @@ jobs:
     env:
       TEST_DATABASE_URL: postgresql+psycopg://notes:notes@localhost:5432/notes_test
       SECRET_KEY: ci-secret-key-not-for-production-use
-      FERNET_KEY: ${{ secrets.CI_FERNET_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -94,8 +93,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev
 
-      - name: Generate Fernet key if secret not set
-        if: ${{ !secrets.CI_FERNET_KEY }}
+      - name: Generate Fernet key
         run: |
           KEY=$(python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
           echo "FERNET_KEY=$KEY" >> $GITHUB_ENV

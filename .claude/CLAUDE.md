@@ -70,7 +70,7 @@ pytest tests/test_notes.py           # legacy e2e notes
 - Starts a PostgreSQL service container, spins up the dev server, runs Playwright E2E tests
 - Uploads Playwright report as an artifact on failure
 
-`CI_FERNET_KEY` repository secret is optional — a fresh key is generated per run if not set.
+A fresh Fernet key is generated per run — no repository secrets required.
 
 ### Known Behavioural Quirks (verified in tests)
 
