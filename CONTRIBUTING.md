@@ -62,32 +62,35 @@ AI agents can be pointed at this repo and used to fix issues end-to-end. If you 
 
 ### Test types
 
-| Type        | Location             | Tool                           | Requires           |
-|-------------|----------------------|--------------------------------|--------------------|
-| Integration | `tests/integration/` | `TestClient` + real PostgreSQL | Docker test DB     |
-| E2E         | `tests/test_*.py`    | Playwright (browser)           | Running dev server |
+| Type        | Location             | Tool                      | Requires                        |
+|-------------|----------------------|---------------------------|---------------------------------|
+| Unit        | `tests/unit/`        | pytest + SQLite in-memory | Nothing — runs standalone       |
+| Integration | `tests/integration/` | pytest + real PostgreSQL  | PostgreSQL at `localhost:5432`  |
+| E2E         | `tests/e2e/`         | Playwright (browser)      | Running dev server at port 8000 |
+
+### Run unit tests
+
+No server or database required:
+
+```bash
+uv run pytest tests/unit/ -v
+```
 
 ### Run integration tests
 
-Start the test database (PostgreSQL + pgvector on port 5433):
+Integration tests require a PostgreSQL instance with a `notes_test` database. Create it if it doesn't exist:
 
 ```bash
-docker compose -f docker/docker-compose.test.yml up -d
+psql -U notes -h localhost -c "CREATE DATABASE notes_test;"
 ```
 
 Run the suite:
 
 ```bash
-uv run pytest tests/integration/ -v
+TEST_DATABASE_URL="postgresql+psycopg://notes:notes@localhost:5432/notes_test" uv run pytest tests/integration/ -v
 ```
 
-The test DB is isolated — tables are created fresh per session and each test rolls back its transaction automatically. No cleanup needed between runs.
-
-To use a different DB, set the env var before running:
-
-```bash
-TEST_DATABASE_URL=postgresql+psycopg://user:pass@host:port/db uv run pytest tests/integration/ -v
-```
+The test DB is isolated — each test rolls back its transaction automatically via savepoint. No cleanup needed between runs.
 
 ### Run E2E tests
 
@@ -97,10 +100,10 @@ Start the dev server first:
 uv run uvicorn main:app --reload
 ```
 
-Then run:
+Then run (with a visible browser):
 
 ```bash
-uv run pytest tests/ --ignore=tests/integration -v
+uv run pytest tests/e2e/ --headed -v
 ```
 
 Install Playwright browsers if you haven't:
@@ -113,16 +116,19 @@ uv run playwright install chromium
 
 ```bash
 # terminal 1
-docker compose -f docker/docker-compose.test.yml up -d
 uv run uvicorn main:app --reload
 
 # terminal 2
-uv run pytest tests/ -v
+uv run pytest tests/unit/ -v
+TEST_DATABASE_URL="postgresql+psycopg://notes:notes@localhost:5432/notes_test" uv run pytest tests/integration/ -v
+uv run pytest tests/e2e/ --headed -v
 ```
 
 ---
 
 ### What tests to write
+
+**Pure logic, no HTTP** → write a unit test in `tests/unit/test_<module>.py`. Use the SQLite in-memory `db` fixture from `tests/unit/conftest.py`. Mock external services (Meili, LLM) at this layer.
 
 **Adding a new endpoint** → write an integration test in the matching `tests/integration/test_<module>.py`.
 
@@ -135,9 +141,9 @@ uv run pytest tests/ -v
 
 Minimum per endpoint: one happy-path test and one error case (missing auth, bad input, or not found).
 
-**Adding a UI flow** → write an E2E test in `tests/test_<feature>.py` using Playwright. Use `logged_in` fixture for authenticated flows. Use `expect()` assertions — avoid `wait_for_timeout` where possible.
+**Adding a UI flow** → write an E2E test in `tests/e2e/test_<feature>.py` using Playwright. Use `logged_in` fixture for authenticated flows. Use `expect()` assertions. See known Playwright quirks in `.claude/CLAUDE.md` before writing E2E tests against HTMX/Alpine UI.
 
-**Changing auth or DB models** → update both the integration test fixtures in `tests/integration/conftest.py` and any affected test files.
+**Changing auth or DB models** → update the integration test fixtures in `tests/integration/conftest.py` and any affected test files.
 
 **No tests needed** for: config changes, template-only styling, migrations that don't change behaviour.
 
