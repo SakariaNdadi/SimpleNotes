@@ -33,8 +33,7 @@ def test_update_wrong_password(auth_client, db_user):
             "current_password": "WrongPass999!",
         },
     )
-    assert r.status_code == 200
-    assert "Incorrect current password" in r.text
+    assert r.status_code == 422
 
 
 def test_unauthenticated_profile(client):

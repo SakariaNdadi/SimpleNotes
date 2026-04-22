@@ -137,7 +137,7 @@ def verify_reset_token(db: Session, raw_token: str) -> PasswordResetToken | None
         db.query(PasswordResetToken)
         .filter(
             PasswordResetToken.token_hash == hashed,
-            PasswordResetToken.used,
+            PasswordResetToken.used == False,  # noqa: E712
         )
         .first()
     )
