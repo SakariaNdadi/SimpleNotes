@@ -40,23 +40,64 @@ Read `.claude/PROJECT_STRUCTURE.md` before editing any file. It contains the ful
 ### Structure
 | Layer | Location | DB |
 |-------|----------|----|
-| Unit | `tests/` | SQLite in-memory |
-| Integration | `tests/integration/` | PostgreSQL `localhost:5433` (real DB, no mocks) |
-| E2E | `tests/test_tasks_e2e.py`, `tests/test_notes.py` | Playwright against live server |
+| Unit | `tests/unit/` | SQLite in-memory |
+| Integration | `tests/integration/` | PostgreSQL `localhost:5432` (real DB, no mocks) |
+| E2E | `tests/e2e/`, `tests/test_tasks_e2e.py`, `tests/test_notes.py` | Playwright against live server |
 
 ### Rules
 - Never mock the database in integration tests. Real DB only — savepoint rollback handles isolation.
-- Unit tests use `TestClient` with SQLite. Acceptable to mock external services (Meili, LLM) at this layer.
+- Unit tests use SQLite in-memory engine (not TestClient). Acceptable to mock external services (Meili, LLM) at this layer.
 - E2E tests use Playwright. Fixtures: `logged_in`, `base_url`, `wait_for_alpine`.
 - Always run the relevant test layer after a change before marking done.
+- Integration tests require `TEST_DATABASE_URL="postgresql+psycopg://notes:notes@localhost:5432/notes_test"`.
 
 ### Commands
 ```bash
-pytest tests/                        # unit
-pytest tests/integration/            # integration (requires postgres)
-pytest tests/test_tasks_e2e.py       # e2e (requires live server + playwright)
-pytest tests/test_notes.py           # e2e notes
+pytest tests/unit/                   # unit (SQLite, no server needed)
+TEST_DATABASE_URL="postgresql+psycopg://notes:notes@localhost:5432/notes_test" pytest tests/integration/   # integration
+pytest tests/e2e/ --headed           # e2e (requires live server at localhost:8000 + playwright)
+pytest tests/test_tasks_e2e.py       # legacy e2e tasks
+pytest tests/test_notes.py           # legacy e2e notes
 ```
+
+### Known Behavioural Quirks (verified in tests)
+
+**`_save_history` with `max_history=1`**: Net result is 0 history entries. The service adds first, then counts (autoflush: count=1), then prunes `count - max_history + 1 = 1` entries. Test must assert `count == 0`.
+
+**Tasks router filter**: `GET /tasks?filter=local` does NOT exclude discovered tasks. The router always calls `get_discovered_tasks()` in a separate query and renders them regardless of filter. Filter only affects the `get_user_tasks()` (active) list.
+
+**Profile template errors**: The profile template renders `errors.username`, `errors.email`, `errors.new_password` inline, but NOT `errors.current_password`. Integration tests for wrong-password must only assert `status_code == 422`, not check response text.
+
+**`_save_history` max_history guard**: `max_history=0` skips history entirely. `max_history=1` prunes to 0. This is correct algorithmic behavior.
+
+### E2E UI Structure (Playwright)
+
+**Tasks panel**: Clicking "Tasks" in the `aside` sidebar sets `settingsPanel = 'tasks'` which opens a drawer/modal. Panel content loads via HTMX into `#settings-content`. The new-task form is hidden behind `#new-task-toggle` (Alpine `newTaskOpen`). Correct open sequence:
+1. `page.locator("aside button", has_text="Tasks").click()`
+2. `page.locator("#new-task-toggle").click()`
+3. Wait for `form[hx-post='/tasks'] input[name='title']` to be visible.
+
+**HTMX buttons with `opacity-0 group-hover:opacity-100`**: Cannot be clicked via standard Playwright `click()` or `click(force=True)` or `dispatch_event("click")`. Use `htmx.ajax()` via `page.evaluate()` directly:
+```python
+page.evaluate(f"() => htmx.ajax('DELETE', '/tasks/{uuid}', {{target: '#{task_id}', swap: 'outerHTML'}})")
+```
+
+**Alpine `aiEnabled`**: This is a component-local variable on the main `x-data` component, NOT only `$store.app.aiEnabled`. Setting only the store does not make `x-show="aiEnabled && searchQuery"` react. Must set both the store and the component data stack:
+```python
+page.evaluate("""() => {
+    localStorage.setItem('notes-ai', 'true');
+    if (window.Alpine) {
+        if (Alpine.store('app')) Alpine.store('app').aiEnabled = true;
+        document.querySelectorAll('[x-data]').forEach(el => {
+            if (el._x_dataStack) {
+                el._x_dataStack.forEach(data => { if ('aiEnabled' in data) data.aiEnabled = true; });
+            }
+        });
+    }
+}""")
+```
+
+**Summary button click**: The note body `<p>` intercepts pointer events over the summary button. Use `dispatch_event("click")` instead of `click()` or `click(force=True)`.
 
 ---
 
