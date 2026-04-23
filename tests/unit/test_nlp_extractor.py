@@ -213,10 +213,11 @@ def test_extract_tasks_long_text_no_crash(spacy_available):
     assert isinstance(tasks, list)
 
 
-def test_extract_tasks_returns_empty_without_spacy(monkeypatch):
-    """EP: when spaCy is not available, returns empty list gracefully."""
+def test_extract_tasks_uses_regex_fallback_without_spacy(monkeypatch):
+    """EP: when spaCy is not available, regex fallback still extracts trigger-based tasks."""
     import app.notes.nlp_extractor as extractor
 
     monkeypatch.setattr(extractor, "_nlp", False)
     tasks = extractor.extract_tasks("I need to buy milk today.")
-    assert tasks == []
+    assert len(tasks) == 1
+    assert "milk" in tasks[0]["title"].lower()

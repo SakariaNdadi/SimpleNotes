@@ -39,6 +39,10 @@ class Settings(BaseSettings):
         1536  # 1536 for OpenAI, 768 for nomic-embed-text, 384 for all-minilm
     )
 
+    @property
+    def is_postgres(self) -> bool:
+        return not self.DATABASE_URL.startswith("sqlite")
+
     class Config:
         env_file = ".env"
         extra = "ignore"
