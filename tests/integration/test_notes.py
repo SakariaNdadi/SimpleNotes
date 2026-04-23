@@ -111,7 +111,7 @@ def test_note_card_shows_saved_summary(auth_client, db, db_note, db_user):
     """EP: GET /notes/{id} with a saved summary → summary content rendered inline."""
     from app.notes.summary_service import save_summary
 
-    _, user = db_user
+    user, _ = db_user
     save_summary(db, db_note.id, user.id, "Pre-saved summary text")
 
     client, _ = auth_client
@@ -124,7 +124,7 @@ def test_note_list_shows_saved_summary(auth_client, db, db_note, db_user):
     """EP: GET /notes with a note that has a saved summary → summary content rendered inline."""
     from app.notes.summary_service import save_summary
 
-    _, user = db_user
+    user, _ = db_user
     save_summary(db, db_note.id, user.id, "Listed note summary")
 
     client, _ = auth_client
@@ -146,7 +146,7 @@ def test_update_note_invalidates_saved_summary(auth_client, db, db_note, db_user
     from app.notes.summary_service import save_summary
     from app.models import NoteSummary
 
-    _, user = db_user
+    user, _ = db_user
     save_summary(db, db_note.id, user.id, "Stale summary")
 
     client, _ = auth_client
