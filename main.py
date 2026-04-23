@@ -88,7 +88,7 @@ def _setup_search() -> None:
 
     setup_index()
 
-    if settings.DATABASE_URL.startswith("sqlite"):
+    if not settings.is_postgres:
         return
 
     from sqlalchemy import text

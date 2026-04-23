@@ -11,6 +11,6 @@ async def get_embedding(text: str) -> list[float] | None:
         return None
     try:
         resp = await litellm.aembedding(model=model, input=[text[:8000]])
-        return resp.data[0]["embedding"]
+        return resp.data[0].embedding
     except Exception:
         return None

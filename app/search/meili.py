@@ -5,39 +5,33 @@ import meilisearch
 from app.config import get_settings
 
 _INDEX = "notes"
+_client_instance: meilisearch.Client | None = None
 
 
-def _client() -> meilisearch.Client | None:
-    s = get_settings()
-    if not s.MEILI_URL:
-        return None
-    return meilisearch.Client(s.MEILI_URL, s.MEILI_KEY or None)
+def _get_client() -> meilisearch.Client | None:
+    global _client_instance
+    if _client_instance is None:
+        s = get_settings()
+        if not s.MEILI_URL:
+            return None
+        _client_instance = meilisearch.Client(s.MEILI_URL, s.MEILI_KEY or None)
+    return _client_instance
 
 
 def setup_index() -> None:
-    client = _client()
+    client = _get_client()
     if not client:
         return
     try:
         client.create_index(_INDEX, {"primaryKey": "id"})
+        client.index(_INDEX).update_filterable_attributes(["user_id"])
+        client.index(_INDEX).update_searchable_attributes(["description"])
     except Exception:
         pass
-    client.index(_INDEX).update_filterable_attributes(["user_id"])
-    client.index(_INDEX).update_searchable_attributes(["description"])
-    client.index(_INDEX).update_ranking_rules(
-        [
-            "words",
-            "typo",
-            "proximity",
-            "attribute",
-            "sort",
-            "exactness",
-        ]
-    )
 
 
 def index_note(note_id: str, user_id: str, description: str) -> None:
-    client = _client()
+    client = _get_client()
     if not client:
         return
     try:
@@ -55,7 +49,7 @@ def index_note(note_id: str, user_id: str, description: str) -> None:
 
 
 def delete_note(note_id: str) -> None:
-    client = _client()
+    client = _get_client()
     if not client:
         return
     try:
@@ -65,7 +59,7 @@ def delete_note(note_id: str) -> None:
 
 
 def search(query: str, user_id: str, limit: int = 50) -> list[str]:
-    client = _client()
+    client = _get_client()
     if not client:
         return []
     try:

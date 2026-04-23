@@ -4,12 +4,15 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 
+def _format_vector(embedding: list[float]) -> str:
+    return "[" + ",".join(str(v) for v in embedding) + "]"
+
+
 def store_embedding(db: Session, note_id: str, embedding: list[float]) -> None:
     db.execute(
         text("UPDATE notes SET embedding = CAST(:emb AS vector) WHERE id = :id"),
-        {"emb": str(embedding), "id": note_id},
+        {"emb": _format_vector(embedding), "id": note_id},
     )
-    db.commit()
 
 
 def similarity_search(
@@ -25,6 +28,6 @@ def similarity_search(
             ORDER BY embedding <=> CAST(:emb AS vector)
             LIMIT :limit
         """),
-        {"user_id": user_id, "emb": str(embedding), "limit": limit},
+        {"user_id": user_id, "emb": _format_vector(embedding), "limit": limit},
     ).fetchall()
     return [r[0] for r in rows]

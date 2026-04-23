@@ -37,6 +37,9 @@ _ACTION_NOUN = re.compile(
     re.IGNORECASE,
 )
 
+# Sentence boundary split for regex-only fallback
+_SENT_SPLIT = re.compile(r"(?<=[.!?])\s+")
+
 
 def _get_nlp():
     global _nlp
@@ -60,19 +63,26 @@ def _parse_date(text: str) -> str | None:
     return parsed.strftime("%Y-%m-%dT%H:%M") if parsed else None
 
 
+def _dates_in_sent(sent) -> str | None:
+    """Extract first resolvable date/time from spaCy NER entities in the sentence."""
+    for ent in sent.ents:
+        if ent.label_ in ("DATE", "TIME"):
+            result = _parse_date(ent.text)
+            if result:
+                return result
+    return None
+
+
 def _dates_in_text(text: str) -> str | None:
-    """Extract first resolvable date/time phrase from free text via dateparser."""
+    """Extract first resolvable date/time phrase from free text via sliding word-window scan."""
     import dateparser
 
-    # Try whole chunk first
     result = dateparser.parse(
         text,
         settings={"PREFER_DATES_FROM": "future", "RETURN_AS_TIMEZONE_AWARE": False},
     )
-    # dateparser on a long sentence often fails — fall back to word-window scan
     if result:
         return result.strftime("%Y-%m-%dT%H:%M")
-    # Slide a window of 1-4 words to find date phrases
     words = text.split()
     for size in range(4, 0, -1):
         for i in range(len(words) - size + 1):
@@ -90,7 +100,10 @@ def _dates_in_text(text: str) -> str | None:
 
 
 def _process_chunk(
-    chunk: str, inherited_action: str | None, seen: set[str]
+    chunk: str,
+    inherited_action: str | None,
+    seen: set[str],
+    date_str: str | None = None,
 ) -> dict | None:
     """Convert a text chunk into a task dict, or None if not actionable."""
     chunk = chunk.strip()
@@ -99,8 +112,8 @@ def _process_chunk(
 
     has_trigger = bool(_TRIGGER.search(chunk))
 
-    # Resolve date from spaCy ents isn't available here — use word-scan
-    date_str = _dates_in_text(chunk)
+    if not date_str:
+        date_str = _parse_date(chunk) if (has_trigger or inherited_action) else None
 
     if not has_trigger and not date_str and not inherited_action:
         return None
@@ -127,9 +140,12 @@ def _process_chunk(
 
 def extract_tasks(text: str) -> list[dict]:
     nlp = _get_nlp()
-    if nlp is None:
-        return []
+    if nlp is not None:
+        return _extract_with_spacy(nlp, text)
+    return _extract_regex_only(text)
 
+
+def _extract_with_spacy(nlp, text: str) -> list[dict]:
     doc = nlp(text[:4000])
     tasks: list[dict] = []
     seen: set[str] = set()
@@ -139,22 +155,51 @@ def extract_tasks(text: str) -> list[dict]:
         if not raw:
             continue
 
-        # Check if this sentence is worth processing at all
         has_trigger = bool(_TRIGGER.search(raw))
-        # Quick date check using spaCy NER
         has_date_ent = any(e.label_ in ("DATE", "TIME") for e in sent.ents)
 
         if not has_trigger and not has_date_ent:
             continue
 
-        # Split compound sentence into individual task chunks
+        # Resolve date once per sentence from NER — avoids O(n²) dateparser scan
+        sent_date = _dates_in_sent(sent)
+
         chunks = _COMPOUND_SPLIT.split(raw)
 
-        # Extract action noun from first chunk for continuation reconstruction
         inherited_action: str | None = None
         m = _ACTION_NOUN.search(chunks[0])
         if m:
-            inherited_action = m.group(1)  # e.g. "meeting"
+            inherited_action = m.group(1)
+
+        for i, chunk in enumerate(chunks):
+            action = None if i == 0 else inherited_action
+            task = _process_chunk(chunk, action, seen, date_str=sent_date)
+            if task:
+                tasks.append(task)
+
+        if len(tasks) >= 5:
+            break
+
+    return tasks[:5]
+
+
+def _extract_regex_only(text: str) -> list[dict]:
+    """Fallback extraction without spaCy: sentence-split on punctuation, match triggers."""
+    sentences = _SENT_SPLIT.split(text[:4000])
+    tasks: list[dict] = []
+    seen: set[str] = set()
+
+    for raw in sentences:
+        raw = raw.strip()
+        if not raw or not _TRIGGER.search(raw):
+            continue
+
+        chunks = _COMPOUND_SPLIT.split(raw)
+
+        inherited_action: str | None = None
+        m = _ACTION_NOUN.search(chunks[0])
+        if m:
+            inherited_action = m.group(1)
 
         for i, chunk in enumerate(chunks):
             action = None if i == 0 else inherited_action

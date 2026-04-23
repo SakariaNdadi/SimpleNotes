@@ -1,9 +1,22 @@
 from __future__ import annotations
 
+import asyncio
+import logging
+
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.models import Note
+
+_log = logging.getLogger(__name__)
+
+
+def _rrf_merge(ranked_lists: list[list[str]], k: int = 60) -> list[str]:
+    scores: dict[str, float] = {}
+    for ranked in ranked_lists:
+        for rank, doc_id in enumerate(ranked, start=1):
+            scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (k + rank)
+    return sorted(scores, key=lambda doc_id: scores[doc_id], reverse=True)
 
 
 async def hybrid_search(
@@ -13,23 +26,18 @@ async def hybrid_search(
     from app.search.meili import search as meili_search
 
     settings = get_settings()
-    is_postgres = not settings.DATABASE_URL.startswith("sqlite")
 
-    meili_ids = meili_search(query, user_id, limit)
+    meili_ids = await asyncio.to_thread(meili_search, query, user_id, limit)
 
-    if is_postgres and settings.EMBEDDING_MODEL:
+    if settings.is_postgres and settings.EMBEDDING_MODEL:
         from app.search.vector import similarity_search
 
         embedding = await get_embedding(query)
         if embedding:
-            vector_ids = similarity_search(db, user_id, embedding, limit)
-            seen: set[str] = set()
-            merged: list[str] = []
-            for nid in vector_ids + meili_ids:
-                if nid not in seen:
-                    seen.add(nid)
-                    merged.append(nid)
-            result_ids = merged[:limit]
+            vector_ids = await asyncio.to_thread(
+                similarity_search, db, user_id, embedding, limit
+            )
+            result_ids = _rrf_merge([vector_ids, meili_ids])[:limit]
         else:
             result_ids = meili_ids
     else:
@@ -60,10 +68,13 @@ async def embed_and_index(note_id: str, user_id: str, description: str) -> None:
     from app.config import get_settings
     from app.database import SessionLocal
 
-    index_note(note_id, user_id, description)
+    try:
+        await asyncio.to_thread(index_note, note_id, user_id, description)
+    except Exception:
+        _log.exception("Meilisearch indexing failed for note %s", note_id)
 
     settings = get_settings()
-    if not settings.EMBEDDING_MODEL or settings.DATABASE_URL.startswith("sqlite"):
+    if not settings.EMBEDDING_MODEL or not settings.is_postgres:
         return
 
     embedding = await get_embedding(description)
@@ -75,5 +86,9 @@ async def embed_and_index(note_id: str, user_id: str, description: str) -> None:
     db = SessionLocal()
     try:
         store_embedding(db, note_id, embedding)
+        db.commit()
+    except Exception:
+        _log.exception("Vector store failed for note %s", note_id)
+        db.rollback()
     finally:
         db.close()

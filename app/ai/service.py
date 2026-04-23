@@ -16,6 +16,7 @@ from app.models import UserLLMConfig
 
 import json
 import logging
+import re
 
 import httpx
 import litellm
@@ -125,9 +126,8 @@ async def detect_tasks(db: Session, user_id: str, note_text: str) -> list[dict]:
     ]
     raw = await complete(db, user_id, messages)
     try:
-        start = raw.find("[")
-        end = raw.rfind("]") + 1
-        return json.loads(raw[start:end]) if start != -1 else []
+        match = re.search(r"\[.*\]", raw, re.DOTALL)
+        return json.loads(match.group()) if match else []
     except (json.JSONDecodeError, ValueError):
         return []
 
@@ -184,9 +184,8 @@ async def semantic_search(
     ]
     raw = await complete(db, user_id, messages)
     try:
-        start = raw.find("[")
-        end = raw.rfind("]") + 1
-        indices = json.loads(raw[start:end]) if start != -1 else []
+        match = re.search(r"\[.*\]", raw, re.DOTALL)
+        indices = json.loads(match.group()) if match else []
         results = [notes[i - 1] for i in indices if 1 <= i <= len(notes)]
         return results if results else notes[:10]
     except (json.JSONDecodeError, ValueError, IndexError):

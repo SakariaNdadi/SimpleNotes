@@ -12,6 +12,7 @@ from app.models import CalendarToken, NoteHistory, User
 from app.notes import service
 from app.notes.nlp_extractor import extract_tasks
 from app.notes.task_service import save_tasks
+from app.notes.summary_service import delete_summary
 from app.preferences.service import get_or_create_prefs
 
 router = APIRouter(prefix="/notes")
@@ -225,6 +226,7 @@ async def update_note(
         end_datetime=end_datetime or None,
         is_all_day=bool(is_all_day),
     )
+    delete_summary(db, note.id, user.id)
     background_tasks.add_task(embed_and_index, note.id, user.id, note.description)
     discovered = _nlp_discover(db, user.id, note.id, note.description)
     labels = get_labels(db, user.id)
