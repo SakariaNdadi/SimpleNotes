@@ -44,5 +44,5 @@
 
     <p class="text-[10px] text-muted mt-1.5">{{ note.created_at.strftime('%b %d, %Y · %H:%M') }}</p>
 
-    <div id="summary-{{ note.id }}"></div>
+    <div id="summary-{{ note.id }}">{% if note.summaries %}{% set summary = note.summaries[0].content %}{% set note_id = note.id %}{% set saved = true %}{% include "partials/ai_summary.html" %}{% endif %}</div>
 </div>

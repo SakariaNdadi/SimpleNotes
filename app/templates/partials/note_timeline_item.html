@@ -107,7 +107,7 @@
             </button>
         </div>
 
-        <div id="summary-{{ note.id }}"></div>
+        <div id="summary-{{ note.id }}">{% if note.summaries %}{% set summary = note.summaries[0].content %}{% set note_id = note.id %}{% set saved = true %}{% include "partials/ai_summary.html" %}{% endif %}</div>
         <div id="history-panel-{{ note.id }}" class="mt-1"></div>
         {% set discovered_tasks = note.tasks | selectattr('status', 'equalto', 'discovered') | list %}
         {% if discovered_tasks %}

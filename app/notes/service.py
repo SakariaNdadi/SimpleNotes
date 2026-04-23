@@ -14,7 +14,11 @@ def get_notes(
     include_deleted: bool = False,
     include_archived: bool = False,
 ) -> list[Note]:
-    q = db.query(Note).options(joinedload(Note.tasks)).filter(Note.user_id == user_id)
+    q = (
+        db.query(Note)
+        .options(joinedload(Note.tasks), joinedload(Note.summaries))
+        .filter(Note.user_id == user_id)
+    )
     if not include_deleted:
         q = q.filter(Note.is_deleted == False)  # noqa: E712
     if not include_archived:
@@ -27,6 +31,7 @@ def get_notes(
 def get_note(db: Session, note_id: str, user_id: str) -> Note | None:
     return (
         db.query(Note)
+        .options(joinedload(Note.summaries))
         .filter(Note.id == note_id, Note.user_id == user_id, Note.is_deleted == False)  # noqa: E712
         .first()
     )

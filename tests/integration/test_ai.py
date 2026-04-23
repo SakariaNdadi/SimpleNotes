@@ -166,8 +166,50 @@ def test_summarize_note_calls_ai_when_save_disabled(
     assert "Mocked AI summary text" in r.text
 
 
+def test_summarize_note_saves_to_db(auth_client, db, db_note, db_llm_config):
+    """EP: save_ai_summaries=True with no existing cache → result persisted to DB."""
+    client, user = auth_client
+    from app.preferences.service import get_or_create_prefs
+
+    prefs = get_or_create_prefs(db, user.id)
+    prefs.save_ai_summaries = True
+    db.flush()
+
+    with patch("app.ai.service.complete", new_callable=AsyncMock) as mock_complete:
+        mock_complete.return_value = "Freshly generated summary"
+        r = client.post(f"/ai/summary/{db_note.id}")
+
+    assert r.status_code == 200
+    assert "Freshly generated summary" in r.text
+
+    record = (
+        db.query(NoteSummary)
+        .filter(NoteSummary.note_id == db_note.id, NoteSummary.user_id == user.id)
+        .first()
+    )
+    assert record is not None
+    assert record.content == "Freshly generated summary"
+
+
+def test_summarize_note_saved_badge_shown(auth_client, db, db_note, db_llm_config):
+    """EP: save_ai_summaries=True → HTML response includes 'Saved' badge."""
+    client, user = auth_client
+    from app.preferences.service import get_or_create_prefs
+
+    prefs = get_or_create_prefs(db, user.id)
+    prefs.save_ai_summaries = True
+    db.flush()
+
+    with patch("app.ai.service.complete", new_callable=AsyncMock) as mock_complete:
+        mock_complete.return_value = "Summary with badge"
+        r = client.post(f"/ai/summary/{db_note.id}")
+
+    assert r.status_code == 200
+    assert "Saved" in r.text
+
+
 def test_summarize_note_returns_cached_summary(auth_client, db, db_note, db_llm_config):
-    """EP: with save_ai_summaries=True and existing cache, returns cached content."""
+    """EP: save_ai_summaries=True and existing cache → cached content returned, LLM not called."""
     client, user = auth_client
     from app.preferences.service import get_or_create_prefs
 
@@ -185,6 +227,29 @@ def test_summarize_note_returns_cached_summary(auth_client, db, db_note, db_llm_
     assert "Cached summary content" in r.text
 
 
+def test_summarize_note_save_disabled_does_not_persist(
+    auth_client, db, db_note, db_llm_config
+):
+    """Decision Table: save_ai_summaries=False → summary not written to DB."""
+    client, user = auth_client
+    from app.preferences.service import get_or_create_prefs
+
+    prefs = get_or_create_prefs(db, user.id)
+    prefs.save_ai_summaries = False
+    db.flush()
+
+    with patch("app.ai.service.complete", new_callable=AsyncMock) as mock_complete:
+        mock_complete.return_value = "Ephemeral summary"
+        client.post(f"/ai/summary/{db_note.id}")
+
+    record = (
+        db.query(NoteSummary)
+        .filter(NoteSummary.note_id == db_note.id, NoteSummary.user_id == user.id)
+        .first()
+    )
+    assert record is None
+
+
 def test_delete_summary(auth_client, db, db_note):
     """EP: DELETE removes the NoteSummary record."""
     client, user = auth_client
@@ -199,6 +264,14 @@ def test_delete_summary(auth_client, db, db_note):
         .first()
     )
     assert found is None
+
+
+def test_delete_summary_idempotent(auth_client, db_note):
+    """EG: DELETE on a note with no summary → 200 with empty body, no error."""
+    client, _ = auth_client
+    r = client.delete(f"/ai/summary/{db_note.id}")
+    assert r.status_code == 200
+    assert r.text == ""
 
 
 # ── AI Search ─────────────────────────────────────────────────────────────────
