@@ -39,8 +39,11 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-notes}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-notes}
       - MEILI_URL=http://meilisearch:7700
       - MEILI_KEY=${MEILI_MASTER_KEY:?MEILI_MASTER_KEY must be set}
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
+    networks:
+      - default
+      - dokploy-network
     restart: unless-stopped
 
   pgadmin:
@@ -61,3 +64,8 @@ volumes:
   postgres_data:
   meili_data:
   pgadmin_data:
+
+networks:
+  default:
+  dokploy-network:
+    external: true
