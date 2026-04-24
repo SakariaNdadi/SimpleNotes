@@ -5,13 +5,13 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: notes
-      POSTGRES_USER: notes
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-notes}
+      POSTGRES_USER: ${POSTGRES_USER:-notes}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U notes"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-notes}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -22,8 +22,8 @@ services:
     ports:
       - "7700:7700"
     environment:
-      - MEILI_MASTER_KEY=your_master_key
-      - MEILI_ENV=development
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:?MEILI_MASTER_KEY must be set}
+      - MEILI_ENV=production
     volumes:
       - meili_data:/meili_data
 
@@ -36,9 +36,9 @@ services:
         condition: service_healthy
     environment:
       - ENV=prod
-      - DATABASE_URL=postgresql://notes:${POSTGRES_PASSWORD:-changeme}@db:5432/notes
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-notes}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-notes}
       - MEILI_URL=http://meilisearch:7700
-      - MEILI_KEY=your_master_key
+      - MEILI_KEY=${MEILI_MASTER_KEY:?MEILI_MASTER_KEY must be set}
     env_file:
       - ../.env
     expose:

@@ -4,11 +4,11 @@ services:
     ports:
       - "5433:5432"
     environment:
-      POSTGRES_DB: notes_test
-      POSTGRES_USER: notes
-      POSTGRES_PASSWORD: notes
+      POSTGRES_DB: ${POSTGRES_DB:-notes_test}
+      POSTGRES_USER: ${POSTGRES_USER:-notes}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-notes}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U notes"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-notes}"]
       interval: 5s
       timeout: 5s
       retries: 5

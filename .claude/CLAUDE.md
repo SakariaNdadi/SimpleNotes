@@ -54,7 +54,7 @@ Read `.claude/PROJECT_STRUCTURE.md` before editing any file. It contains the ful
 ### Commands
 ```bash
 pytest tests/unit/                   # unit (SQLite, no server needed)
-TEST_DATABASE_URL="postgresql+psycopg://notes:notes@localhost:5432/notes_test" pytest tests/integration/   # integration
+TEST_DATABASE_URL="postgresql+psycopg://${POSTGRES_USER:-notes}:${POSTGRES_PASSWORD:-notes}@localhost:5432/${POSTGRES_DB:-notes_test}" pytest tests/integration/   # integration
 pytest tests/e2e/ --headed           # e2e (requires live server at localhost:8000 + playwright)
 pytest tests/test_tasks_e2e.py       # legacy e2e tasks
 pytest tests/test_notes.py           # legacy e2e notes
