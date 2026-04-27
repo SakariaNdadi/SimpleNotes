@@ -1,7 +1,6 @@
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -16,6 +15,7 @@ from app.labels.router import router as labels_router
 from app.notes.router import router as notes_router
 from app.notes.tasks_router import router as tasks_router
 from app.preferences.router import router as preferences_router
+from app.templates_config import templates
 
 settings = get_settings()
 
@@ -24,8 +24,6 @@ app = FastAPI(title="Notes", version="1.0.0", docs_url="/api/docs")
 app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
-templates = Jinja2Templates(directory="app/templates")
 
 app.include_router(auth_router)
 app.include_router(profile_router)

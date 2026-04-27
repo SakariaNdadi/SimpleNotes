@@ -17,6 +17,7 @@ from app.models import UserLLMConfig
 import json
 import logging
 import re
+from datetime import date, datetime
 
 import httpx
 import litellm
@@ -26,6 +27,28 @@ litellm.suppress_debug_info = True
 for _log in ("LiteLLM", "LiteLLM Router", "LiteLLM Proxy"):
     logging.getLogger(_log).setLevel(logging.CRITICAL)
 logging.getLogger("vertex_llm_base").setLevel(logging.CRITICAL)
+
+
+def _relative_date_label(note_dt: datetime | None, today: date) -> str:
+    if note_dt is None:
+        return "unknown date"
+    note_date = note_dt.date()
+    delta = (today - note_date).days
+    if delta == 0:
+        return "today"
+    if delta == 1:
+        return "yesterday"
+    if delta < 7:
+        return f"{delta} days ago"
+    if delta < 14:
+        return "last week"
+    if today.year == note_date.year and today.month == note_date.month:
+        return f"this month on the {note_date.day}"
+    if delta <= 60:
+        return f"last month on the {note_date.day}"
+    if today.year == note_date.year:
+        return f"{note_date.strftime('%b')} {note_date.day}"
+    return note_date.strftime("%b %d, %Y")
 
 
 def _get_active_config(db: Session, user_id: str) -> UserLLMConfig | None:
@@ -132,19 +155,26 @@ async def detect_tasks(db: Session, user_id: str, note_text: str) -> list[dict]:
         return []
 
 
-async def answer_from_notes(db: Session, user_id: str, query: str, notes: list) -> str:
+async def answer_from_notes(
+    db: Session, user_id: str, query: str, notes: list, today: date | None = None
+) -> str:
     if not notes:
         return ""
+    if today is None:
+        today = date.today()
     context = "\n".join(
-        f"[{i + 1}] ({n.created_at.strftime('%b %d, %Y') if n.created_at else '?'}): {n.description[:300]}"
+        f"[{i + 1}] ({_relative_date_label(n.created_at, today)}): {n.description[:300]}"
         for i, n in enumerate(notes)
     )
     messages = [
         {
             "role": "system",
             "content": (
-                "You are a personal notes assistant. Answer the user's question directly and concisely "
-                "using only the notes provided as context. Include relevant dates or details from the notes. "
+                f"You are a personal notes assistant. Today's date is {today.strftime('%A, %B %d, %Y')}. "
+                "When the user asks about 'tomorrow', 'today', 'next week', or other relative time references, "
+                f"interpret them relative to today ({today}). "
+                "Answer the user's question directly and concisely using only the notes provided as context. "
+                "When referencing a note, use its relative date label (e.g., 'last month on the 12th you noted...'). "
                 "If the notes don't contain enough information, say so briefly."
             ),
         },
@@ -159,6 +189,7 @@ async def semantic_search(
     query: str,
     notes: list,
     languages: list[str] | None = None,
+    today: date | None = None,
 ) -> list:
     """
     Dev fallback: rank notes by keyword relevance using LLM.
@@ -167,17 +198,26 @@ async def semantic_search(
     if not notes:
         return []
 
+    if today is None:
+        today = date.today()
+
     lang_hint = ""
     if languages:
         lang_hint = f" The user may write notes in: {', '.join(languages)}. Consider multilingual matches."
 
-    numbered = "\n".join(f"{i + 1}. {n.description[:200]}" for i, n in enumerate(notes))
+    numbered = "\n".join(
+        f"{i + 1}. ({_relative_date_label(n.created_at, today)}) {n.description[:200]}"
+        for i, n in enumerate(notes)
+    )
     messages = [
         {
             "role": "system",
             "content": (
-                "Given the search query and a numbered list of notes, return the numbers of the most relevant notes "
-                f"in order of relevance as a JSON array of integers. Max 10 results. Return ONLY JSON array.{lang_hint}"
+                f"Today is {today.strftime('%A, %B %d, %Y')}. "
+                "Interpret temporal references in the query (tomorrow, today, next week, last month, etc.) relative to today. "
+                "Given the search query and a numbered list of notes with their relative dates, "
+                "return the numbers of the most relevant notes in order of relevance as a JSON array of integers. "
+                f"Max 10 results. Return ONLY JSON array.{lang_hint}"
             ),
         },
         {"role": "user", "content": f"Query: {query}\n\nNotes:\n{numbered}"},

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from app.templates_config import templates
 from sqlalchemy.orm import Session
 
 from app.auth import service
@@ -13,7 +13,6 @@ from app.auth.utils import (
 from app.database import get_db
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 
 def get_current_user(request: Request, db: Session = Depends(get_db)):

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from app.templates_config import templates
 from sqlalchemy.orm import Session
 
 from app.auth.router import require_user
@@ -20,7 +20,6 @@ from app.notes.task_service import (
 )
 
 router = APIRouter(prefix="/tasks")
-templates = Jinja2Templates(directory="app/templates")
 
 _FILTER_STATUSES = {"local", "google", "microsoft"}
 

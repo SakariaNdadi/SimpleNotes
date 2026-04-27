@@ -1,6 +1,6 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from app.templates_config import templates
 from sqlalchemy.orm import Session
 
 from app.search.hybrid import embed_and_index
@@ -16,7 +16,6 @@ from app.notes.summary_service import delete_summary
 from app.preferences.service import get_or_create_prefs
 
 router = APIRouter(prefix="/notes")
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("", response_class=HTMLResponse)

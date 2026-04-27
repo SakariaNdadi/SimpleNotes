@@ -42,7 +42,7 @@
         x-data="{ expanded: false }" :class="expanded ? '' : 'note-body-clamped'" @click="expanded = !expanded">
         {{ note.description }}</p>
 
-    <p class="text-[10px] text-muted mt-1.5">{{ note.created_at.strftime('%b %d, %Y · %H:%M') }}</p>
+    <p class="text-[10px] text-muted mt-1.5" title="{{ note.created_at.strftime('%b %d, %Y %H:%M') }}">{{ note.created_at | humanize_date }}</p>
 
     <div id="summary-{{ note.id }}">{% if note.summaries %}{% set summary = note.summaries[0].content %}{% set note_id = note.id %}{% set saved = true %}{% include "partials/ai_summary.html" %}{% endif %}</div>
 </div>

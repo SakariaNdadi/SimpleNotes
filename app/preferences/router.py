@@ -4,7 +4,7 @@ import json
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from app.templates_config import templates
 from sqlalchemy.orm import Session
 
 from app.auth.router import require_user
@@ -13,7 +13,6 @@ from app.models import User
 from app.preferences.service import get_or_create_prefs, update_prefs
 
 router = APIRouter(prefix="/preferences")
-templates = Jinja2Templates(directory="app/templates")
 
 AVAILABLE_FONTS = [
     {"id": "inter", "label": "Inter", "css": "Inter, sans-serif"},

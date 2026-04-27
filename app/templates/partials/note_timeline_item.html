@@ -37,8 +37,9 @@
                 </span>
                 {% endif %}
             </div>
-            <time class="text-[11px] text-gray-400 font-medium whitespace-nowrap flex-shrink-0 mt-0.5">
-                {{ note.created_at.strftime('%b %d - %H:%M') }}
+            <time class="text-[11px] text-gray-400 font-medium whitespace-nowrap flex-shrink-0 mt-0.5"
+                title="{{ note.created_at.strftime('%b %d, %Y %H:%M') }}">
+                {{ note.created_at | humanize_date }}
             </time>
         </div>
 

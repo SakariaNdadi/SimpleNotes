@@ -1,8 +1,9 @@
 import asyncio
+from datetime import date
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from app.templates_config import templates
 from sqlalchemy.orm import Session
 
 from app.ai import service as ai_service
@@ -16,7 +17,6 @@ from app.notes.task_service import save_tasks
 from app.preferences.service import get_languages, get_or_create_prefs
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 
 # ── LLM Settings ─────────────────────────────────────────────────────────────
@@ -272,9 +272,10 @@ async def ai_search(
     hybrid_results = await hybrid_search(db, user.id, query)
     candidates = hybrid_results if hybrid_results else all_notes
 
+    today = date.today()
     results, answer = await asyncio.gather(
-        ai_service.semantic_search(db, user.id, query, candidates, languages=langs),
-        ai_service.answer_from_notes(db, user.id, query, candidates[:20]),
+        ai_service.semantic_search(db, user.id, query, candidates, languages=langs, today=today),
+        ai_service.answer_from_notes(db, user.id, query, candidates[:20], today=today),
     )
 
     labels = get_labels(db, user.id)
