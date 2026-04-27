@@ -138,11 +138,6 @@
   background-color: var(--accent);
 }
 
-.note-discovered-border {
-  border-left: 3px solid color-mix(in srgb, var(--accent) 50%, transparent);
-  border-radius: 2px;
-  margin-left: -3px;
-}
 
 .note-task-badge {
   display: inline-flex;
