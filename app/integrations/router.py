@@ -2,7 +2,6 @@ import secrets
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from app.templates_config import templates
 from sqlalchemy.orm import Session
 
 from app.auth.router import require_user

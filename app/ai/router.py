@@ -274,7 +274,9 @@ async def ai_search(
 
     today = date.today()
     results, answer = await asyncio.gather(
-        ai_service.semantic_search(db, user.id, query, candidates, languages=langs, today=today),
+        ai_service.semantic_search(
+            db, user.id, query, candidates, languages=langs, today=today
+        ),
         ai_service.answer_from_notes(db, user.id, query, candidates[:20], today=today),
     )
 
