@@ -111,6 +111,22 @@ page.evaluate("""() => {
 
 **Summary button click**: The note body `<p>` intercepts pointer events over the summary button. Use `dispatch_event("click")` instead of `click()` or `click(force=True)`.
 
+**Sidebar (desktop-hideable)**: The close `×` button is no longer `md:hidden` — the sidebar can be toggled on desktop too. `<main>` uses `:class="sidebarOpen ? 'md:ml-64' : 'md:ml-0'"`. The backdrop overlay remains `md:hidden`. `sidebarOpen` initialises to `window.innerWidth >= 768`.
+
+**Double-click to open composer**: `@dblclick.self` on both `div.flex-1.overflow-y-auto` and `#note-feed` calls `composerOpen ? closeComposer() : openComposer()`. In Playwright use `dispatch_event("dblclick")` on `#note-feed` to avoid child elements intercepting.
+
+**Note card `showSummary`**: Every note card has `x-data="{ showSummary: false, expanded: false }"`. A "Summary" pill button (rendered only when `note.summaries` is non-empty) toggles `showSummary`. The AI summary button (inside `opacity-0 group-hover:opacity-100`) sets `showSummary = true`. The summary container uses `x-show="showSummary"`. To reveal in tests without hover:
+
+```python
+page.evaluate("""() => {
+    document.querySelectorAll('[x-data]').forEach(el => {
+        if (el._x_dataStack) {
+            el._x_dataStack.forEach(data => { if ('showSummary' in data) data.showSummary = true; });
+        }
+    });
+}""")
+```
+
 ---
 
 ## Code Rules
