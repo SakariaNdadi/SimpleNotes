@@ -47,9 +47,9 @@ async def get_preferences_panel(
 
     selected_langs = _json.loads(prefs.languages) if prefs.languages else ["en"]
     return templates.TemplateResponse(
+        request,
         "partials/preferences_panel.html",
         {
-            "request": request,
             "prefs": prefs,
             "fonts": AVAILABLE_FONTS,
             "languages": AVAILABLE_LANGUAGES,

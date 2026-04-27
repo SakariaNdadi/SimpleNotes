@@ -43,9 +43,9 @@ async def tasks_panel(
 
     done = get_done_tasks(db, user.id)
     return templates.TemplateResponse(
+        request,
         "partials/tasks_panel.html",
         {
-            "request": request,
             "discovered": discovered,
             "tasks": created,
             "done": done,
@@ -86,8 +86,9 @@ async def create_task_route(
         for t in db.query(CalendarToken).filter(CalendarToken.user_id == user.id).all()
     ]
     return templates.TemplateResponse(
+        request,
         "partials/task_card.html",
-        {"request": request, "task": task, "providers": providers},
+        {"task": task, "providers": providers},
         headers={"HX-Trigger": "taskCountChanged"},
     )
 
@@ -201,8 +202,9 @@ async def edit_task_form(
         for t in db.query(CalendarToken).filter(CalendarToken.user_id == user.id).all()
     ]
     return templates.TemplateResponse(
+        request,
         "partials/task_edit_form.html",
-        {"request": request, "task": task, "providers": providers},
+        {"task": task, "providers": providers},
     )
 
 
@@ -237,8 +239,9 @@ async def update_task_route(
         for t in db.query(CalendarToken).filter(CalendarToken.user_id == user.id).all()
     ]
     return templates.TemplateResponse(
+        request,
         "partials/task_card.html",
-        {"request": request, "task": task, "providers": providers},
+        {"task": task, "providers": providers},
     )
 
 

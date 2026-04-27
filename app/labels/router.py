@@ -17,7 +17,7 @@ async def list_labels(
 ):
     labels = service.get_labels(db, user.id)
     return templates.TemplateResponse(
-        "partials/label_list.html", {"request": request, "labels": labels}
+        request, "partials/label_list.html", {"labels": labels}
     )
 
 
@@ -37,7 +37,7 @@ async def create_label(
         return HTMLResponse(f'<p class="error">{result}</p>', status_code=422)
     labels = service.get_labels(db, user.id)
     return templates.TemplateResponse(
-        "partials/label_list.html", {"request": request, "labels": labels}
+        request, "partials/label_list.html", {"labels": labels}
     )
 
 
@@ -60,7 +60,7 @@ async def update_label(
     if isinstance(result, str):
         return HTMLResponse(f'<p class="error">{result}</p>', status_code=422)
     return templates.TemplateResponse(
-        "partials/label_item.html", {"request": request, "label": result}
+        request, "partials/label_item.html", {"label": result}
     )
 
 

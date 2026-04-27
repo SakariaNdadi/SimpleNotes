@@ -141,6 +141,7 @@ def test_note_card_no_summary_div_empty(auth_client, db_note):
     assert f'id="summary-{db_note.id}"' in r.text
     # summary container exists but contains no ai_summary partial (no summaries on note)
     import re
+
     summary_block = re.search(
         rf'id="summary-{db_note.id}"[^>]*>(.*?)</div>',
         r.text,

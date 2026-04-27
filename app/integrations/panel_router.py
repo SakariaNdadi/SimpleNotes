@@ -17,6 +17,7 @@ async def integrations_panel(
     tokens = db.query(CalendarToken).filter(CalendarToken.user_id == user.id).all()
     connected_providers = [t.provider for t in tokens]
     return templates.TemplateResponse(
+        request,
         "partials/integrations_panel.html",
-        {"request": request, "connected_providers": connected_providers},
+        {"connected_providers": connected_providers},
     )

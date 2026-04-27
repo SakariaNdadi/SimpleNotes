@@ -32,9 +32,9 @@ async def list_notes(
     next_offset = offset + len(notes)
     has_more = len(notes) == 20
     return templates.TemplateResponse(
+        request,
         "partials/note_list.html",
         {
-            "request": request,
             "notes": notes,
             "labels": labels,
             "providers": providers,
@@ -75,9 +75,9 @@ async def create_note(
     labels = get_labels(db, user.id)
     providers = _connected_providers(db, user.id)
     return templates.TemplateResponse(
+        request,
         "partials/note_timeline_item.html",
         {
-            "request": request,
             "note": note,
             "labels": labels,
             "discovered_tasks": discovered,
@@ -99,9 +99,9 @@ async def search_notes_local(
     results = service.search_notes(db, user.id, query.strip()) if query.strip() else []
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
+        request,
         "partials/note_list.html",
         {
-            "request": request,
             "notes": results,
             "labels": labels,
             "next_offset": 0,
@@ -122,8 +122,9 @@ async def trash_feed(
     notes = service.get_trash(db, user.id)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
+        request,
         "partials/trash_list.html",
-        {"request": request, "notes": notes, "labels": labels},
+        {"notes": notes, "labels": labels},
     )
 
 
@@ -136,8 +137,9 @@ async def archive_feed(
     notes = service.get_archive(db, user.id)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
+        request,
         "partials/archive_list.html",
-        {"request": request, "notes": notes, "labels": labels},
+        {"notes": notes, "labels": labels},
     )
 
 
@@ -153,8 +155,9 @@ async def get_note_card(
         return HTMLResponse("Not found", status_code=404)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
+        request,
         "partials/note_timeline_item.html",
-        {"request": request, "note": note, "labels": labels},
+        {"note": note, "labels": labels},
     )
 
 
@@ -170,8 +173,9 @@ async def edit_note_form(
         return HTMLResponse("Not found", status_code=404)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
+        request,
         "partials/note_edit_form.html",
-        {"request": request, "note": note, "labels": labels},
+        {"note": note, "labels": labels},
     )
 
 
@@ -189,8 +193,9 @@ async def note_history(
         .all()
     )
     return templates.TemplateResponse(
+        request,
         "partials/note_history_panel.html",
-        {"request": request, "entries": entries, "note_id": note_id},
+        {"entries": entries, "note_id": note_id},
     )
 
 
@@ -231,9 +236,9 @@ async def update_note(
     labels = get_labels(db, user.id)
     providers = _connected_providers(db, user.id)
     return templates.TemplateResponse(
+        request,
         "partials/note_timeline_item.html",
         {
-            "request": request,
             "note": note,
             "labels": labels,
             "discovered_tasks": discovered,
@@ -323,8 +328,9 @@ async def restore_from_history(
     background_tasks.add_task(embed_and_index, note.id, user.id, note.description)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
+        request,
         "partials/note_timeline_item.html",
-        {"request": request, "note": note, "labels": labels, "discovered_tasks": []},
+        {"note": note, "labels": labels, "discovered_tasks": []},
     )
 
 

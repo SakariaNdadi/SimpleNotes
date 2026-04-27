@@ -28,7 +28,7 @@ async def llm_settings_page(
 ):
     configs = db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).all()
     return templates.TemplateResponse(
-        "partials/llm_settings.html", {"request": request, "configs": configs}
+        request, "partials/llm_settings.html", {"configs": configs}
     )
 
 
@@ -58,9 +58,9 @@ async def add_llm_config(
 
     configs = db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).all()
     return templates.TemplateResponse(
+        request,
         "partials/llm_settings.html",
         {
-            "request": request,
             "configs": configs,
             "success": "LLM config saved and set as active",
         },
@@ -84,7 +84,7 @@ async def delete_llm_config(
         db.commit()
     configs = db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).all()
     return templates.TemplateResponse(
-        "partials/llm_settings.html", {"request": request, "configs": configs}
+        request, "partials/llm_settings.html", {"configs": configs}
     )
 
 
@@ -103,7 +103,7 @@ async def edit_llm_config_form(
     if not config:
         return HTMLResponse("Not found", status_code=404)
     return templates.TemplateResponse(
-        "partials/llm_edit_form.html", {"request": request, "cfg": config}
+        request, "partials/llm_edit_form.html", {"cfg": config}
     )
 
 
@@ -133,8 +133,9 @@ async def update_llm_config(
     db.commit()
     configs = db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).all()
     return templates.TemplateResponse(
+        request,
         "partials/llm_settings.html",
-        {"request": request, "configs": configs, "success": "Config updated"},
+        {"configs": configs, "success": "Config updated"},
     )
 
 
@@ -155,7 +156,7 @@ async def deactivate_llm_config(
         db.commit()
     configs = db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).all()
     return templates.TemplateResponse(
-        "partials/llm_settings.html", {"request": request, "configs": configs}
+        request, "partials/llm_settings.html", {"configs": configs}
     )
 
 
@@ -179,7 +180,7 @@ async def activate_llm_config(
         db.commit()
     configs = db.query(UserLLMConfig).filter(UserLLMConfig.user_id == user.id).all()
     return templates.TemplateResponse(
-        "partials/llm_settings.html", {"request": request, "configs": configs}
+        request, "partials/llm_settings.html", {"configs": configs}
     )
 
 
@@ -205,9 +206,9 @@ async def summarize_note(
         existing = get_summary(db, note_id, user.id)
         if existing:
             return templates.TemplateResponse(
+                request,
                 "partials/ai_summary.html",
                 {
-                    "request": request,
                     "summary": existing.content,
                     "note_id": note_id,
                     "saved": True,
@@ -223,9 +224,9 @@ async def summarize_note(
         save_summary(db, note_id, user.id, summary)
 
     return templates.TemplateResponse(
+        request,
         "partials/ai_summary.html",
         {
-            "request": request,
             "summary": summary,
             "note_id": note_id,
             "saved": prefs.save_ai_summaries,
@@ -282,9 +283,9 @@ async def ai_search(
 
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
+        request,
         "partials/note_list.html",
         {
-            "request": request,
             "notes": results,
             "labels": labels,
             "next_offset": 0,
@@ -318,9 +319,9 @@ async def detect_tasks(
     connected = db.query(CalendarToken).filter(CalendarToken.user_id == user.id).all()
     providers = [t.provider for t in connected]
     return templates.TemplateResponse(
+        request,
         "partials/task_prompt.html",
         {
-            "request": request,
             "tasks": tasks,
             "note_id": note_id,
             "providers": providers,
