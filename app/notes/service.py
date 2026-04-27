@@ -16,7 +16,9 @@ def get_notes(
 ) -> list[Note]:
     q = (
         db.query(Note)
-        .options(joinedload(Note.tasks), joinedload(Note.summaries), joinedload(Note.history))
+        .options(
+            joinedload(Note.tasks), joinedload(Note.summaries), joinedload(Note.history)
+        )
         .filter(Note.user_id == user_id)
     )
     if not include_deleted:
