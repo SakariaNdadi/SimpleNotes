@@ -321,14 +321,14 @@
             </form>
         </div>
 
-        <div class="flex-1 overflow-y-auto">
+        <div class="flex-1 overflow-y-auto" @dblclick.self="openComposer()">
             <div x-show="aiSearching" x-cloak
                 class="px-4 py-10 max-w-2xl mx-auto flex flex-col items-center gap-3 text-muted text-[13px]">
                 <span class="spinner w-5 h-5 border-2"></span>
                 <span>Asking AI…</span>
             </div>
             <div id="note-feed" x-show="!aiSearching" class="px-4 py-4 max-w-2xl mx-auto" hx-get="/notes" hx-trigger="load"
-                hx-swap="innerHTML">
+                hx-swap="innerHTML" @dblclick.self="openComposer()">
                 <div class="text-center text-muted py-10 text-[12px] flex items-center justify-center gap-2">
                     <span class="spinner border-2"></span> Loading...
                 </div>
