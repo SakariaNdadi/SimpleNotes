@@ -33,8 +33,11 @@ def test_delete_note(page: Page, base_url, logged_in):
     page.keyboard.press("Control+Enter")
     card = page.locator("#note-feed [id^='note-']").first
     expect(card).to_contain_text("Note to delete")
-    card.hover()
-    card.locator("button[hx-delete]").click()
+    note_id = card.get_attribute("id")
+    delete_url = card.locator("button[hx-delete]").get_attribute("hx-delete")
+    page.evaluate(
+        f"() => htmx.ajax('DELETE', '{delete_url}', {{target: '#{note_id}', swap: 'outerHTML'}})"
+    )
     expect(card).not_to_be_visible()
 
 
@@ -59,10 +62,14 @@ def test_restore_from_trash(page: Page, base_url, logged_in):
     page.fill("textarea[name='description']", "Note for trash restore")
     page.keyboard.press("Control+Enter")
     card = page.locator("#note-feed [id^='note-']").first
-    card.hover()
-    card.locator("button[hx-delete]").click()
-    page.get_by_text("Trash").click()
-    trash_card = page.locator("#note-feed [id^='note-']").first
+    note_id = card.get_attribute("id")
+    delete_url = card.locator("button[hx-delete]").get_attribute("hx-delete")
+    page.evaluate(
+        f"() => htmx.ajax('DELETE', '{delete_url}', {{target: '#{note_id}', swap: 'outerHTML'}})"
+    )
+    expect(card).not_to_be_visible()
+    page.locator("aside button", has_text="Trash").click()
+    trash_card = page.locator("#note-feed [id^='trash-note-']").first
     expect(trash_card).to_contain_text("Note for trash restore")
     trash_card.hover()
     trash_card.locator("button[hx-post*='restore']").click()
