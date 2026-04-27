@@ -1,5 +1,6 @@
 {% set has_discovered = note.tasks | selectattr('status', 'equalto', 'discovered') | list | length > 0 %}
-<div class="relative flex gap-2.5 pb-1 group hover:pb-3 transition-all duration-200" id="note-{{ note.id }}">
+<div class="relative flex gap-2.5 pb-1 group hover:pb-3 transition-all duration-200" id="note-{{ note.id }}"
+    x-data="{ showSummary: false, expanded: false }">
     <div class="flex-shrink-0 flex flex-col items-center z-10">
         <div
             class="w-2 h-2 rounded-full border-2 mt-1.5 transition-all duration-200 {% if has_discovered %}note-dot-active{% else %}note-dot{% endif %}">
@@ -44,7 +45,7 @@
         </div>
 
         <p class="text-[13px] leading-snug text-primary whitespace-pre-wrap break-words cursor-pointer"
-            x-data="{ expanded: false }" :class="expanded ? '' : 'note-body-clamped'" @click="expanded = !expanded">
+            :class="expanded ? '' : 'note-body-clamped'" @click="expanded = !expanded">
             {{ note.description }}</p>
         {% if note.start_datetime or note.is_all_day %}
         <p class="text-[11px] text-[color:var(--accent)] mt-0.5 flex items-center gap-1">
@@ -60,7 +61,7 @@
         <div class="flex items-center gap-0.5 note-actions">
             <span x-show="$store.app.aiEnabled" class="inline-flex items-center gap-0.5">
                 <button title="AI summary" hx-post="/ai/summary/{{ note.id }}" hx-target="#summary-{{ note.id }}"
-                    hx-swap="innerHTML" hx-indicator="#sum-ind-{{ note.id }}"
+                    hx-swap="innerHTML" hx-indicator="#sum-ind-{{ note.id }}" @click="showSummary = true"
                     class="p-1 text-muted hover:text-[color:var(--accent)] rounded hover:bg-[color:var(--surface2)] transition-colors">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -108,7 +109,14 @@
             </button>
         </div>
 
-        <div id="summary-{{ note.id }}">{% if note.summaries %}{% set summary = note.summaries[0].content %}{% set note_id = note.id %}{% set saved = true %}{% include "partials/ai_summary.html" %}{% endif %}</div>
+        <div id="summary-{{ note.id }}" x-show="showSummary" x-transition x-cloak>
+            {% if note.summaries %}
+            {% set summary = note.summaries[0].content %}
+            {% set note_id = note.id %}
+            {% set saved = true %}
+            {% include "partials/ai_summary.html" %}
+            {% endif %}
+        </div>
         <div id="history-panel-{{ note.id }}" class="mt-1"></div>
         {% set discovered_tasks = note.tasks | selectattr('status', 'equalto', 'discovered') | list %}
         {% if discovered_tasks %}
