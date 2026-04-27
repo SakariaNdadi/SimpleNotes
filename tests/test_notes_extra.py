@@ -19,12 +19,13 @@ def test_edit_note(page: Page, base_url, logged_in):
     wait_for_alpine(page)
     _create_note(page, "Note to edit original")
     card = page.locator("#note-feed [id^='note-']").first
-    card.hover()
-    card.locator("button[hx-get*='/edit']").click()
-    edit_area = page.locator("textarea[name='description']")
+    note_id = card.get_attribute("id").removeprefix("note-")
+    # edit button is hidden in .note-actions (max-height:0); dispatch_event bypasses visibility
+    card.locator("button[hx-get*='/edit']").dispatch_event("click")
+    edit_area = page.locator(f"#note-{note_id} textarea[name='description']")
     edit_area.wait_for(state="visible")
     edit_area.fill("Note after edit")
-    page.locator("button[type='submit']").first.click()
+    page.locator(f"#note-{note_id} button[type='submit']").click()
     expect(page.locator("#note-feed")).to_contain_text("Note after edit")
 
 
@@ -33,14 +34,18 @@ def test_permanent_delete(page: Page, base_url, logged_in):
     wait_for_alpine(page)
     _create_note(page, "Note for permanent delete")
     card = page.locator("#note-feed [id^='note-']").first
-    card.hover()
-    card.locator("button[hx-delete]").click()
-    page.get_by_text("Trash").click()
-    trash_card = page.locator("#note-feed [id^='note-']").first
+    note_id = card.get_attribute("id").removeprefix("note-")
+    page.evaluate(
+        f"() => htmx.ajax('DELETE', '/notes/{note_id}', {{target: '#note-{note_id}', swap: 'outerHTML'}})"
+    )
+    expect(page.locator(f"#note-{note_id}")).not_to_be_visible()
+    page.locator("aside button", has_text="Trash").click()
+    page.locator(f"#trash-note-{note_id}").wait_for(state="visible")
+    trash_card = page.locator(f"#trash-note-{note_id}")
     expect(trash_card).to_contain_text("Note for permanent delete")
-    trash_card.hover()
+    page.once("dialog", lambda d: d.accept())
     trash_card.locator("button[hx-delete*='permanent']").click()
-    expect(page.locator("#note-feed")).not_to_contain_text("Note for permanent delete")
+    expect(page.locator(f"#trash-note-{note_id}")).not_to_be_visible()
 
 
 def test_filter_notes_by_label(page: Page, base_url, logged_in):
@@ -63,13 +68,13 @@ def test_restore_from_archive(page: Page, base_url, logged_in):
     wait_for_alpine(page)
     _create_note(page, "Note for archive restore")
     card = page.locator("#note-feed [id^='note-']").first
-    card.hover()
-    card.locator("button[hx-post*='archive']").click()
-    expect(card).not_to_be_visible()
-    page.get_by_text("Archive").click()
-    archive_card = page.locator("#note-feed [id^='note-']").first
+    note_id = card.get_attribute("id").removeprefix("note-")
+    card.locator("button[hx-post*='archive']").dispatch_event("click")
+    expect(page.locator(f"#note-{note_id}")).not_to_be_visible()
+    page.locator("aside button", has_text="Archive").click()
+    page.locator(f"#archive-note-{note_id}").wait_for(state="visible")
+    archive_card = page.locator(f"#archive-note-{note_id}")
     expect(archive_card).to_contain_text("Note for archive restore")
-    archive_card.hover()
     archive_card.locator("button[hx-post*='restore']").click()
-    page.get_by_text("All notes").click()
+    page.locator("aside button", has_text="All notes").click()
     expect(page.locator("#note-feed")).to_contain_text("Note for archive restore")

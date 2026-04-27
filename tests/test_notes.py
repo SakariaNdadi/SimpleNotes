@@ -33,8 +33,10 @@ def test_delete_note(page: Page, base_url, logged_in):
     page.keyboard.press("Control+Enter")
     card = page.locator("#note-feed [id^='note-']").first
     expect(card).to_contain_text("Note to delete")
-    card.hover()
-    card.locator("button[hx-delete]").click()
+    note_id = card.get_attribute("id").removeprefix("note-")
+    page.evaluate(
+        f"() => htmx.ajax('DELETE', '/notes/{note_id}', {{target: '#note-{note_id}', swap: 'outerHTML'}})"
+    )
     expect(card).not_to_be_visible()
 
 
@@ -48,7 +50,7 @@ def test_archive_note(page: Page, base_url, logged_in):
     card.hover()
     card.locator("button[hx-post*='archive']").click()
     expect(card).not_to_be_visible()
-    page.get_by_text("Archive").click()
+    page.locator("aside button", has_text="Archive").click()
     expect(page.locator("#note-feed")).to_contain_text("Note to archive")
 
 
@@ -59,14 +61,17 @@ def test_restore_from_trash(page: Page, base_url, logged_in):
     page.fill("textarea[name='description']", "Note for trash restore")
     page.keyboard.press("Control+Enter")
     card = page.locator("#note-feed [id^='note-']").first
-    card.hover()
-    card.locator("button[hx-delete]").click()
-    page.get_by_text("Trash").click()
-    trash_card = page.locator("#note-feed [id^='note-']").first
+    note_id = card.get_attribute("id").removeprefix("note-")
+    page.evaluate(
+        f"() => htmx.ajax('DELETE', '/notes/{note_id}', {{target: '#note-{note_id}', swap: 'outerHTML'}})"
+    )
+    expect(page.locator(f"#note-{note_id}")).not_to_be_visible()
+    page.locator("aside button", has_text="Trash").click()
+    page.locator(f"#trash-note-{note_id}").wait_for(state="visible")
+    trash_card = page.locator(f"#trash-note-{note_id}")
     expect(trash_card).to_contain_text("Note for trash restore")
-    trash_card.hover()
     trash_card.locator("button[hx-post*='restore']").click()
-    page.get_by_text("All notes").click()
+    page.locator("aside button", has_text="All notes").click()
     expect(page.locator("#note-feed")).to_contain_text("Note for trash restore")
 
 

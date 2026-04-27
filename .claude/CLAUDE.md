@@ -142,6 +142,10 @@ page.evaluate("""() => {
 
 **Double-click to open composer**: `@dblclick.self` on both `div.flex-1.overflow-y-auto` and `#note-feed` calls `composerOpen ? closeComposer() : openComposer()`. In Playwright use `dispatch_event("dblclick")` on `#note-feed` to avoid child elements intercepting.
 
+**Trash and archive element IDs**: The main feed uses `id="note-{id}"`. The trash feed uses `id="trash-note-{id}"` and the archive feed uses `id="archive-note-{id}"`. Do not use `[id^='note-']` when targeting trash or archive cards — it will never match.
+
+**`.note-actions` hidden buttons**: Action buttons in `note_timeline_item.html` are wrapped in `.note-actions` which has `max-height: 0; overflow: hidden; opacity: 0` by default (CSS, not Tailwind). Like `opacity-0 group-hover:opacity-100` buttons, standard `click()` and `click(force=True)` do not fire HTMX. Use `dispatch_event("click")` for buttons that trigger `hx-get`/`hx-post`/`hx-put`, or use `htmx.ajax()` for `hx-delete`.
+
 **Note card `showSummary`**: Every note card has `x-data="{ showSummary: false, expanded: false }"`. A "Summary" pill button (rendered only when `note.summaries` is non-empty) toggles `showSummary`. The AI summary button (inside `opacity-0 group-hover:opacity-100`) sets `showSummary = true`. The summary container uses `x-show="showSummary"`. To reveal in tests without hover:
 
 ```python
