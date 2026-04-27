@@ -303,16 +303,16 @@
                                 class="rounded border-base accent-[color:var(--accent)]" />
                             All day
                         </label>
-                        <div x-show="!allDay" class="flex gap-1.5">
+                        <div x-show="!allDay" x-transition class="flex gap-2">
                             <div class="flex-1">
-                                <label class="block text-[10px] text-muted mb-0.5">Start</label>
+                                <label class="block text-[10px] font-bold text-muted uppercase px-1 mb-1">Start</label>
                                 <input type="datetime-local" name="start_datetime" :min="nowMin"
-                                    class="input-base w-full text-[11px] px-2 py-1 rounded border bg-surface outline-none focus:border-[color:var(--accent)]" />
+                                    class="input-premium" />
                             </div>
                             <div class="flex-1">
-                                <label class="block text-[10px] text-muted mb-0.5">End</label>
+                                <label class="block text-[10px] font-bold text-muted uppercase px-1 mb-1">End</label>
                                 <input type="datetime-local" name="end_datetime" :min="nowMin"
-                                    class="input-base w-full text-[11px] px-2 py-1 rounded border bg-surface outline-none focus:border-[color:var(--accent)]" />
+                                    class="input-premium" />
                             </div>
                         </div>
                     </div>
