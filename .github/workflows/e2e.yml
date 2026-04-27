@@ -48,13 +48,13 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev
 
-      - name: Install Playwright browsers
-        run: uv run playwright install chromium --with-deps
-
       - name: Generate Fernet key
         run: |
-          KEY=$(python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
+          KEY=$(uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
           echo "FERNET_KEY=$KEY" >> $GITHUB_ENV
+
+      - name: Install Playwright browsers
+        run: uv run playwright install chromium --with-deps
 
       - name: Start dev server
         run: |
