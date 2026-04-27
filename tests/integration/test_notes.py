@@ -138,7 +138,16 @@ def test_note_card_no_summary_div_empty(auth_client, db_note):
     client, _ = auth_client
     r = client.get(f"/notes/{db_note.id}")
     assert r.status_code == 200
-    assert f'id="summary-{db_note.id}"></div>' in r.text
+    assert f'id="summary-{db_note.id}"' in r.text
+    # summary container exists but contains no ai_summary partial (no summaries on note)
+    import re
+    summary_block = re.search(
+        rf'id="summary-{db_note.id}"[^>]*>(.*?)</div>',
+        r.text,
+        re.DOTALL,
+    )
+    assert summary_block is not None
+    assert summary_block.group(1).strip() == ""
 
 
 def test_update_note_invalidates_saved_summary(auth_client, db, db_note, db_user):
