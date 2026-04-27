@@ -10,13 +10,21 @@ Notes is an open-source, self-hosted notes app. Contributions are welcome — fr
 - Report issues
 - Review pull requests
 
+## Requirements
+
+- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) — required to run the app and services locally
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) — required to run tests and linting outside Docker
+
+All development, testing, and E2E flows assume Docker is available. There is no supported path for running the app directly without it.
+
 ## Getting Started
 
 1. Fork the repo
 2. Follow [docs/setup.md](docs/setup.md) to run locally
-3. Create a branch: `git checkout -b feat/your-feature` or `fix/your-bug`
-4. Make changes, test them
-5. Open a pull request against `master`
+3. Start the dev stack: `docker compose -f docker/docker-compose.dev.yml up -d`
+4. Create a branch: `git checkout -b feat/your-feature` or `fix/your-bug`
+5. Make changes, test them
+6. Open a pull request against `dev`
 
 ## Filing Issues
 
@@ -55,7 +63,7 @@ AI agents can be pointed at this repo and used to fix issues end-to-end. If you 
 
 1. Point the agent at a specific open issue
 2. Have it follow the setup in [docs/setup.md](docs/setup.md)
-3. Run the dev server and verify the change works before submitting
+3. Start the dev stack with Docker and verify the change works before submitting
 4. Open the PR as normal
 
 ## Testing
@@ -78,10 +86,16 @@ uv run pytest tests/unit/ -v
 
 ### Run integration tests
 
-Integration tests require a PostgreSQL instance with a `notes_test` database. Create it if it doesn't exist:
+Integration tests require PostgreSQL — start it via Docker if it's not already running:
 
 ```bash
-psql -U notes -h localhost -c "CREATE DATABASE notes_test;"
+docker compose -f docker/docker-compose.dev.yml up -d db
+```
+
+Create the test database if it doesn't exist:
+
+```bash
+docker exec postgres-pgvector-dev psql -U notes -c "CREATE DATABASE notes_test;"
 ```
 
 Run the suite:
@@ -94,10 +108,10 @@ The test DB is isolated — each test rolls back its transaction automatically v
 
 ### Run E2E tests
 
-Start the dev server first:
+Start the dev stack first:
 
 ```bash
-uv run uvicorn main:app --reload
+docker compose -f docker/docker-compose.dev.yml up -d
 ```
 
 Then run (with a visible browser):
@@ -115,10 +129,10 @@ uv run playwright install chromium
 ### Run everything
 
 ```bash
-# terminal 1
-uv run uvicorn main:app --reload
+# start all services (app + postgres + meilisearch)
+docker compose -f docker/docker-compose.dev.yml up -d
 
-# terminal 2
+# then in another terminal
 uv run pytest tests/unit/ -v
 TEST_DATABASE_URL="postgresql+psycopg://notes:notes@localhost:5432/notes_test" uv run pytest tests/integration/ -v
 uv run pytest tests/e2e/ --headed -v
@@ -149,6 +163,34 @@ Minimum per endpoint: one happy-path test and one error case (missing auth, bad 
 
 ---
 
+## Pre-commit Hook
+
+A pre-commit hook blocks commits that fail linting or tests. Install it once after cloning:
+
+```bash
+cp .git/hooks/pre-commit .git/hooks/pre-commit 2>/dev/null || true
+chmod +x .git/hooks/pre-commit
+```
+
+The hook is already present in `.git/hooks/pre-commit` if you cloned the repo. It requires Docker to be running for integration and E2E tests. It runs:
+
+1. `ruff check` — linting
+2. `ruff format --check` — formatting
+3. `pytest tests/unit/` — unit tests (always)
+4. `pytest tests/integration/` — integration tests (requires PostgreSQL at `localhost:5432`)
+5. `pytest tests/e2e/` — E2E tests (skipped automatically if no server at `localhost:8000`)
+
+To include E2E tests, start the dev server before committing:
+
+```bash
+docker compose -f docker/docker-compose.dev.yml up -d
+git commit ...
+```
+
+To bypass for a WIP commit: `git commit --no-verify`
+
+---
+
 ## Code Style
 
 Linting is handled by [Ruff](https://docs.astral.sh/ruff/):
@@ -162,7 +204,7 @@ Run this before opening a PR.
 
 ## Project Structure
 
-```
+```text
 app/
   auth/          # Auth, profile, JWT
   notes/         # Notes CRUD, history, tasks

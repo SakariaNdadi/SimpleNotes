@@ -60,13 +60,37 @@ pytest tests/test_tasks_e2e.py       # legacy e2e tasks
 pytest tests/test_notes.py           # legacy e2e notes
 ```
 
+### Pre-commit Hook
+
+`.git/hooks/pre-commit` runs automatically on every `git commit` and blocks the commit on any failure:
+
+1. `ruff check` — linting
+2. `ruff format --check` — formatting
+3. `pytest tests/unit/` — unit tests (SQLite, always runs)
+4. `pytest tests/integration/` — integration tests (requires PostgreSQL at `localhost:5432`)
+5. `pytest tests/e2e/ tests/test_notes.py tests/test_tasks_e2e.py` — E2E tests (skipped automatically if no server at `localhost:8000`)
+
+To run E2E tests in the hook, start the server before committing:
+
+```bash
+docker compose -f docker/docker-compose.dev.yml up -d
+git commit ...
+```
+
+To bypass the hook entirely (WIP commits only): `git commit --no-verify`
+
+---
+
 ### GitHub Actions
+
 `.github/workflows/ci.yml` — runs on every push/PR to `dev`, `main`:
+
 - `lint`: ruff check + format check
 - `unit`: unit tests (SQLite, no services)
 - `integration`: integration tests against pgvector/pgvector:pg17 service container
 
 `.github/workflows/e2e.yml` — runs on push/PR to `main` and manual dispatch:
+
 - Starts a PostgreSQL service container, spins up the dev server, runs Playwright E2E tests
 - Uploads Playwright report as an artifact on failure
 
@@ -85,16 +109,19 @@ A fresh Fernet key is generated per run — no repository secrets required.
 ### E2E UI Structure (Playwright)
 
 **Tasks panel**: Clicking "Tasks" in the `aside` sidebar sets `settingsPanel = 'tasks'` which opens a drawer/modal. Panel content loads via HTMX into `#settings-content`. The new-task form is hidden behind `#new-task-toggle` (Alpine `newTaskOpen`). Correct open sequence:
+
 1. `page.locator("aside button", has_text="Tasks").click()`
 2. `page.locator("#new-task-toggle").click()`
 3. Wait for `form[hx-post='/tasks'] input[name='title']` to be visible.
 
 **HTMX buttons with `opacity-0 group-hover:opacity-100`**: Cannot be clicked via standard Playwright `click()` or `click(force=True)` or `dispatch_event("click")`. Use `htmx.ajax()` via `page.evaluate()` directly:
+
 ```python
 page.evaluate(f"() => htmx.ajax('DELETE', '/tasks/{uuid}', {{target: '#{task_id}', swap: 'outerHTML'}})")
 ```
 
 **Alpine `aiEnabled`**: This is a component-local variable on the main `x-data` component, NOT only `$store.app.aiEnabled`. Setting only the store does not make `x-show="aiEnabled && searchQuery"` react. Must set both the store and the component data stack:
+
 ```python
 page.evaluate("""() => {
     localStorage.setItem('notes-ai', 'true');
@@ -143,7 +170,7 @@ page.evaluate("""() => {
 ## Fixtures Reference (`tests/integration/conftest.py`)
 
 | Fixture | Returns |
-|---------|---------|
+| --- | --- |
 | `engine` | SQLAlchemy engine (session-scoped) |
 | `db` | Session with savepoint rollback |
 | `client` | TestClient with overridden `get_db` |
