@@ -15,7 +15,7 @@ from main import app
 # Must be set before any app imports so get_settings() picks them up.
 _TEST_DB_URL = os.getenv(
     "TEST_DATABASE_URL",
-    "postgresql+psycopg://notes:notes@localhost:5433/notes_test",
+    "postgresql+psycopg://notes:notes@localhost:5432/notes_test",
 )
 os.environ["DATABASE_URL"] = _TEST_DB_URL
 os.environ.setdefault("MEILI_URL", "")

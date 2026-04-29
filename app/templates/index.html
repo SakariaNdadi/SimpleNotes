@@ -5,8 +5,8 @@
 
     <aside
         class="flex flex-col flex-shrink-0 w-64 bg-surface border-r border-base overflow-y-auto transition-transform duration-200"
-        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
-        style="position: fixed; top:0; left:0; bottom:0; z-index:40; md:position:relative" x-cloak>
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+        style="position: fixed; top:0; left:0; bottom:0; z-index:40;" x-cloak>
 
         <div class="flex items-center justify-between px-4 h-12 border-b border-base flex-shrink-0">
             <div class="flex items-center gap-2">
@@ -16,7 +16,7 @@
                 </svg>
                 <span class="font-semibold text-[14px] tracking-tight text-primary">Notes</span>
             </div>
-            <button class="md:hidden text-muted hover:text-primary p-1 rounded hover:bg-surface2 transition-colors"
+            <button class="text-muted hover:text-primary p-1 rounded hover:bg-surface2 transition-colors"
                 @click="sidebarOpen=false">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -179,7 +179,8 @@
     <div x-show="sidebarOpen" @click="sidebarOpen=false"
         class="fixed inset-0 bg-black/20 z-30 md:hidden transition-opacity" x-cloak></div>
 
-    <main class="flex-1 flex flex-col overflow-hidden md:ml-64 relative bg-bg">
+    <main class="flex-1 flex flex-col overflow-hidden relative bg-bg transition-all duration-200"
+          :class="sidebarOpen ? 'md:ml-64' : 'md:ml-0'">
         <header class="h-12 flex items-center gap-3 px-4 border-b border-base bg-surface flex-shrink-0 z-10">
             <button @click="sidebarOpen = !sidebarOpen"
                 class="p-1.5 rounded text-muted hover:text-primary hover:bg-surface2 transition-colors">
@@ -303,16 +304,16 @@
                                 class="rounded border-base accent-[color:var(--accent)]" />
                             All day
                         </label>
-                        <div x-show="!allDay" class="flex gap-1.5">
+                        <div x-show="!allDay" x-transition class="flex gap-2">
                             <div class="flex-1">
-                                <label class="block text-[10px] text-muted mb-0.5">Start</label>
+                                <label class="block text-[10px] font-bold text-muted uppercase px-1 mb-1">Start</label>
                                 <input type="datetime-local" name="start_datetime" :min="nowMin"
-                                    class="input-base w-full text-[11px] px-2 py-1 rounded border bg-surface outline-none focus:border-[color:var(--accent)]" />
+                                    class="input-premium" />
                             </div>
                             <div class="flex-1">
-                                <label class="block text-[10px] text-muted mb-0.5">End</label>
+                                <label class="block text-[10px] font-bold text-muted uppercase px-1 mb-1">End</label>
                                 <input type="datetime-local" name="end_datetime" :min="nowMin"
-                                    class="input-base w-full text-[11px] px-2 py-1 rounded border bg-surface outline-none focus:border-[color:var(--accent)]" />
+                                    class="input-premium" />
                             </div>
                         </div>
                     </div>
@@ -320,14 +321,14 @@
             </form>
         </div>
 
-        <div class="flex-1 overflow-y-auto">
+        <div class="flex-1 overflow-y-auto" @dblclick.self="composerOpen ? closeComposer() : openComposer()">
             <div x-show="aiSearching" x-cloak
                 class="px-4 py-10 max-w-2xl mx-auto flex flex-col items-center gap-3 text-muted text-[13px]">
                 <span class="spinner w-5 h-5 border-2"></span>
                 <span>Asking AI…</span>
             </div>
             <div id="note-feed" x-show="!aiSearching" class="px-4 py-4 max-w-2xl mx-auto" hx-get="/notes" hx-trigger="load"
-                hx-swap="innerHTML">
+                hx-swap="innerHTML" @dblclick.self="composerOpen ? closeComposer() : openComposer()">
                 <div class="text-center text-muted py-10 text-[12px] flex items-center justify-center gap-2">
                     <span class="spinner border-2"></span> Loading...
                 </div>

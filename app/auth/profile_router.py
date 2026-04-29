@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from app.templates_config import templates
 from sqlalchemy.orm import Session
 
 from app.auth.router import require_user
@@ -15,14 +15,11 @@ from app.database import get_db
 from app.models import User
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/profile", response_class=HTMLResponse)
 async def profile_page(request: Request, user: User = Depends(require_user)):
-    return templates.TemplateResponse(
-        "partials/profile.html", {"request": request, "user": user}
-    )
+    return templates.TemplateResponse(request, "partials/profile.html", {"user": user})
 
 
 @router.post("/profile", response_class=HTMLResponse)
@@ -61,8 +58,9 @@ async def update_profile(
 
     if errors:
         return templates.TemplateResponse(
+            request,
             "partials/profile.html",
-            {"request": request, "user": user, "errors": errors},
+            {"user": user, "errors": errors},
             status_code=422,
         )
 
@@ -75,6 +73,7 @@ async def update_profile(
     db.commit()
 
     return templates.TemplateResponse(
+        request,
         "partials/profile.html",
-        {"request": request, "user": user, "success": "Profile updated"},
+        {"user": user, "success": "Profile updated"},
     )

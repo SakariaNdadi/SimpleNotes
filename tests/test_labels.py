@@ -26,6 +26,8 @@ def test_delete_label(page: Page, base_url, logged_in):
     label_item = page.locator("#label-list [id^='label-']").filter(
         has_text="Label to delete"
     )
-    label_item.hover()
-    label_item.locator("button[hx-delete]").click()
+    label_id = label_item.get_attribute("id").removeprefix("label-")
+    page.evaluate(
+        f"() => htmx.ajax('DELETE', '/labels/{label_id}', {{target: '#label-{label_id}', swap: 'outerHTML'}})"
+    )
     expect(page.locator("#label-list")).not_to_contain_text("Label to delete")

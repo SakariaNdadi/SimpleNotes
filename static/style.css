@@ -138,11 +138,6 @@
   background-color: var(--accent);
 }
 
-.note-discovered-border {
-  padding-left: 0.5rem;
-  border-left: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
-  border-radius: 2px;
-}
 
 .note-task-badge {
   display: inline-flex;
@@ -168,4 +163,76 @@
   max-height: 2rem;
   margin-top: 0.25rem;
   opacity: 1;
+}
+
+/* ── Premium Inputs ────────────────────────────────────────────────────────── */
+.input-premium {
+  background-color: var(--surface2);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 0.5rem 0.75rem;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+.input-premium:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 15%, transparent);
+  outline: none;
+}
+
+/* Customizing datetime-local appearance */
+input[type="datetime-local"].input-premium {
+  position: relative;
+  min-height: 38px;
+}
+
+input[type="datetime-local"].input-premium::-webkit-calendar-picker-indicator {
+  background: transparent;
+  bottom: 0;
+  color: transparent;
+  cursor: pointer;
+  height: auto;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: auto;
+}
+
+/* Premium Button */
+.btn-premium {
+  background-color: var(--accent);
+  color: var(--accent-fg);
+  border-radius: 12px;
+  padding: 0.5rem 1rem;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.btn-premium:hover {
+  background-color: var(--accent-h);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.btn-premium:active {
+  transform: translateY(0);
+}
+
+/* Task Card Premium */
+.task-card-premium {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1rem;
+  transition: all 0.2s ease;
+}
+.task-card-premium:hover {
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.04);
 }

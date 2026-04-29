@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from app.templates_config import templates
 from sqlalchemy.orm import Session
 
 from app.auth import service
@@ -13,7 +13,6 @@ from app.auth.utils import (
 from app.database import get_db
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 
 def get_current_user(request: Request, db: Session = Depends(get_db)):
@@ -37,7 +36,7 @@ def require_user(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse(request, "register.html")
 
 
 @router.post("/register", response_class=HTMLResponse)
@@ -65,9 +64,9 @@ async def register(
 
     if errors:
         return templates.TemplateResponse(
+            request,
             "register.html",
             {
-                "request": request,
                 "errors": errors,
                 "values": {"username": username, "email": email},
             },
@@ -76,14 +75,15 @@ async def register(
 
     service.create_user(db, username, email, password)
     return templates.TemplateResponse(
+        request,
         "register.html",
-        {"request": request, "success": "Account created! You can now log in."},
+        {"success": "Account created! You can now log in."},
     )
 
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request, "login.html")
 
 
 @router.post("/login", response_class=HTMLResponse)
@@ -97,9 +97,9 @@ async def login(
     user = service.authenticate_user(db, username, password)
     if not user:
         return templates.TemplateResponse(
+            request,
             "login.html",
             {
-                "request": request,
                 "error": "Invalid username or password",
                 "username": username,
             },
@@ -107,9 +107,9 @@ async def login(
         )
     if not user.is_verified:
         return templates.TemplateResponse(
+            request,
             "login.html",
             {
-                "request": request,
                 "error": "Please verify your email before logging in.",
                 "username": username,
             },
@@ -136,18 +136,20 @@ async def verify_email(request: Request, token: str, db: Session = Depends(get_d
     user = service.verify_email_token(db, token)
     if not user:
         return templates.TemplateResponse(
+            request,
             "verify_email.html",
-            {"request": request, "error": "Invalid or expired verification link."},
+            {"error": "Invalid or expired verification link."},
         )
     return templates.TemplateResponse(
+        request,
         "verify_email.html",
-        {"request": request, "success": "Email verified! You can now log in."},
+        {"success": "Email verified! You can now log in."},
     )
 
 
 @router.get("/forgot-password", response_class=HTMLResponse)
 async def forgot_password_page(request: Request):
-    return templates.TemplateResponse("forgot_password.html", {"request": request})
+    return templates.TemplateResponse(request, "forgot_password.html")
 
 
 @router.post("/forgot-password", response_class=HTMLResponse)
@@ -159,9 +161,9 @@ async def forgot_password(
         await service.send_password_reset_email(db, user)
     # Always show success to prevent email enumeration
     return templates.TemplateResponse(
+        request,
         "forgot_password.html",
         {
-            "request": request,
             "success": "If that email exists, a reset link has been sent.",
         },
     )
@@ -174,12 +176,11 @@ async def reset_password_page(
     record = service.verify_reset_token(db, token)
     if not record:
         return templates.TemplateResponse(
+            request,
             "reset_password.html",
-            {"request": request, "error": "Invalid or expired reset link."},
+            {"error": "Invalid or expired reset link."},
         )
-    return templates.TemplateResponse(
-        "reset_password.html", {"request": request, "token": token}
-    )
+    return templates.TemplateResponse(request, "reset_password.html", {"token": token})
 
 
 @router.post("/reset-password/{token}", response_class=HTMLResponse)
@@ -193,8 +194,9 @@ async def reset_password(
     record = service.verify_reset_token(db, token)
     if not record:
         return templates.TemplateResponse(
+            request,
             "reset_password.html",
-            {"request": request, "error": "Invalid or expired reset link."},
+            {"error": "Invalid or expired reset link."},
         )
 
     errors = {}
@@ -206,13 +208,15 @@ async def reset_password(
 
     if errors:
         return templates.TemplateResponse(
+            request,
             "reset_password.html",
-            {"request": request, "errors": errors, "token": token},
+            {"errors": errors, "token": token},
             status_code=422,
         )
 
     service.reset_password(db, record, password)
     return templates.TemplateResponse(
+        request,
         "reset_password.html",
-        {"request": request, "success": "Password reset! You can now log in."},
+        {"success": "Password reset! You can now log in."},
     )

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from app.templates_config import templates
 from sqlalchemy.orm import Session
 
 from app.auth.router import require_user
@@ -20,7 +20,6 @@ from app.notes.task_service import (
 )
 
 router = APIRouter(prefix="/tasks")
-templates = Jinja2Templates(directory="app/templates")
 
 _FILTER_STATUSES = {"local", "google", "microsoft"}
 
@@ -44,9 +43,9 @@ async def tasks_panel(
 
     done = get_done_tasks(db, user.id)
     return templates.TemplateResponse(
+        request,
         "partials/tasks_panel.html",
         {
-            "request": request,
             "discovered": discovered,
             "tasks": created,
             "done": done,
@@ -87,8 +86,9 @@ async def create_task_route(
         for t in db.query(CalendarToken).filter(CalendarToken.user_id == user.id).all()
     ]
     return templates.TemplateResponse(
+        request,
         "partials/task_card.html",
-        {"request": request, "task": task, "providers": providers},
+        {"task": task, "providers": providers},
         headers={"HX-Trigger": "taskCountChanged"},
     )
 
@@ -202,8 +202,9 @@ async def edit_task_form(
         for t in db.query(CalendarToken).filter(CalendarToken.user_id == user.id).all()
     ]
     return templates.TemplateResponse(
+        request,
         "partials/task_edit_form.html",
-        {"request": request, "task": task, "providers": providers},
+        {"task": task, "providers": providers},
     )
 
 
@@ -238,8 +239,9 @@ async def update_task_route(
         for t in db.query(CalendarToken).filter(CalendarToken.user_id == user.id).all()
     ]
     return templates.TemplateResponse(
+        request,
         "partials/task_card.html",
-        {"request": request, "task": task, "providers": providers},
+        {"task": task, "providers": providers},
     )
 
 
