@@ -16,7 +16,9 @@ def get_notes(
 ) -> list[Note]:
     q = (
         db.query(Note)
-        .options(joinedload(Note.tasks), joinedload(Note.summaries))
+        .options(
+            joinedload(Note.tasks), joinedload(Note.summaries), joinedload(Note.history)
+        )
         .filter(Note.user_id == user_id)
     )
     if not include_deleted:
@@ -31,7 +33,7 @@ def get_notes(
 def get_note(db: Session, note_id: str, user_id: str) -> Note | None:
     return (
         db.query(Note)
-        .options(joinedload(Note.summaries))
+        .options(joinedload(Note.summaries), joinedload(Note.history))
         .filter(Note.id == note_id, Note.user_id == user_id, Note.is_deleted == False)  # noqa: E712
         .first()
     )
@@ -39,7 +41,12 @@ def get_note(db: Session, note_id: str, user_id: str) -> Note | None:
 
 def get_note_any(db: Session, note_id: str, user_id: str) -> Note | None:
     """Get note regardless of deleted/archived state."""
-    return db.query(Note).filter(Note.id == note_id, Note.user_id == user_id).first()
+    return (
+        db.query(Note)
+        .options(joinedload(Note.history))
+        .filter(Note.id == note_id, Note.user_id == user_id)
+        .first()
+    )
 
 
 def create_note(

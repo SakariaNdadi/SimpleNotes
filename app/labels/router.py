@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from app.templates_config import templates
 from sqlalchemy.orm import Session
 
 from app.auth.router import require_user
@@ -9,7 +9,6 @@ from app.labels import service
 from app.models import User
 
 router = APIRouter(prefix="/labels")
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("", response_class=HTMLResponse)
@@ -18,7 +17,7 @@ async def list_labels(
 ):
     labels = service.get_labels(db, user.id)
     return templates.TemplateResponse(
-        "partials/label_list.html", {"request": request, "labels": labels}
+        request, "partials/label_list.html", {"labels": labels}
     )
 
 
@@ -38,7 +37,7 @@ async def create_label(
         return HTMLResponse(f'<p class="error">{result}</p>', status_code=422)
     labels = service.get_labels(db, user.id)
     return templates.TemplateResponse(
-        "partials/label_list.html", {"request": request, "labels": labels}
+        request, "partials/label_list.html", {"labels": labels}
     )
 
 
@@ -61,7 +60,7 @@ async def update_label(
     if isinstance(result, str):
         return HTMLResponse(f'<p class="error">{result}</p>', status_code=422)
     return templates.TemplateResponse(
-        "partials/label_item.html", {"request": request, "label": result}
+        request, "partials/label_item.html", {"label": result}
     )
 
 

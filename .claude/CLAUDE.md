@@ -60,13 +60,37 @@ pytest tests/test_tasks_e2e.py       # legacy e2e tasks
 pytest tests/test_notes.py           # legacy e2e notes
 ```
 
+### Pre-commit Hook
+
+`.git/hooks/pre-commit` runs automatically on every `git commit` and blocks the commit on any failure:
+
+1. `ruff check` — linting
+2. `ruff format --check` — formatting
+3. `pytest tests/unit/` — unit tests (SQLite, always runs)
+4. `pytest tests/integration/` — integration tests (requires PostgreSQL at `localhost:5432`)
+5. `pytest tests/e2e/ tests/test_notes.py tests/test_tasks_e2e.py` — E2E tests (skipped automatically if no server at `localhost:8000`)
+
+To run E2E tests in the hook, start the server before committing:
+
+```bash
+docker compose -f docker/docker-compose.dev.yml up -d
+git commit ...
+```
+
+To bypass the hook entirely (WIP commits only): `git commit --no-verify`
+
+---
+
 ### GitHub Actions
+
 `.github/workflows/ci.yml` — runs on every push/PR to `dev`, `main`:
+
 - `lint`: ruff check + format check
 - `unit`: unit tests (SQLite, no services)
 - `integration`: integration tests against pgvector/pgvector:pg17 service container
 
 `.github/workflows/e2e.yml` — runs on push/PR to `main` and manual dispatch:
+
 - Starts a PostgreSQL service container, spins up the dev server, runs Playwright E2E tests
 - Uploads Playwright report as an artifact on failure
 
@@ -85,16 +109,19 @@ A fresh Fernet key is generated per run — no repository secrets required.
 ### E2E UI Structure (Playwright)
 
 **Tasks panel**: Clicking "Tasks" in the `aside` sidebar sets `settingsPanel = 'tasks'` which opens a drawer/modal. Panel content loads via HTMX into `#settings-content`. The new-task form is hidden behind `#new-task-toggle` (Alpine `newTaskOpen`). Correct open sequence:
+
 1. `page.locator("aside button", has_text="Tasks").click()`
 2. `page.locator("#new-task-toggle").click()`
 3. Wait for `form[hx-post='/tasks'] input[name='title']` to be visible.
 
 **HTMX buttons with `opacity-0 group-hover:opacity-100`**: Cannot be clicked via standard Playwright `click()` or `click(force=True)` or `dispatch_event("click")`. Use `htmx.ajax()` via `page.evaluate()` directly:
+
 ```python
 page.evaluate(f"() => htmx.ajax('DELETE', '/tasks/{uuid}', {{target: '#{task_id}', swap: 'outerHTML'}})")
 ```
 
 **Alpine `aiEnabled`**: This is a component-local variable on the main `x-data` component, NOT only `$store.app.aiEnabled`. Setting only the store does not make `x-show="aiEnabled && searchQuery"` react. Must set both the store and the component data stack:
+
 ```python
 page.evaluate("""() => {
     localStorage.setItem('notes-ai', 'true');
@@ -110,6 +137,26 @@ page.evaluate("""() => {
 ```
 
 **Summary button click**: The note body `<p>` intercepts pointer events over the summary button. Use `dispatch_event("click")` instead of `click()` or `click(force=True)`.
+
+**Sidebar (desktop-hideable)**: The close `×` button is no longer `md:hidden` — the sidebar can be toggled on desktop too. `<main>` uses `:class="sidebarOpen ? 'md:ml-64' : 'md:ml-0'"`. The backdrop overlay remains `md:hidden`. `sidebarOpen` initialises to `window.innerWidth >= 768`.
+
+**Double-click to open composer**: `@dblclick.self` on both `div.flex-1.overflow-y-auto` and `#note-feed` calls `composerOpen ? closeComposer() : openComposer()`. In Playwright use `dispatch_event("dblclick")` on `#note-feed` to avoid child elements intercepting.
+
+**Trash and archive element IDs**: The main feed uses `id="note-{id}"`. The trash feed uses `id="trash-note-{id}"` and the archive feed uses `id="archive-note-{id}"`. Do not use `[id^='note-']` when targeting trash or archive cards — it will never match.
+
+**`.note-actions` hidden buttons**: Action buttons in `note_timeline_item.html` are wrapped in `.note-actions` which has `max-height: 0; overflow: hidden; opacity: 0` by default (CSS, not Tailwind). Like `opacity-0 group-hover:opacity-100` buttons, standard `click()` and `click(force=True)` do not fire HTMX. Use `dispatch_event("click")` for buttons that trigger `hx-get`/`hx-post`/`hx-put`, or use `htmx.ajax()` for `hx-delete`.
+
+**Note card `showSummary`**: Every note card has `x-data="{ showSummary: false, expanded: false }"`. A "Summary" pill button (rendered only when `note.summaries` is non-empty) toggles `showSummary`. The AI summary button (inside `opacity-0 group-hover:opacity-100`) sets `showSummary = true`. The summary container uses `x-show="showSummary"`. To reveal in tests without hover:
+
+```python
+page.evaluate("""() => {
+    document.querySelectorAll('[x-data]').forEach(el => {
+        if (el._x_dataStack) {
+            el._x_dataStack.forEach(data => { if ('showSummary' in data) data.showSummary = true; });
+        }
+    });
+}""")
+```
 
 ---
 
@@ -127,7 +174,7 @@ page.evaluate("""() => {
 ## Fixtures Reference (`tests/integration/conftest.py`)
 
 | Fixture | Returns |
-|---------|---------|
+| --- | --- |
 | `engine` | SQLAlchemy engine (session-scoped) |
 | `db` | Session with savepoint rollback |
 | `client` | TestClient with overridden `get_db` |

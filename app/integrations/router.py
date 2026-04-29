@@ -2,7 +2,6 @@ import secrets
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.auth.router import require_user
@@ -11,7 +10,6 @@ from app.database import get_db
 from app.models import CalendarToken, User
 
 router = APIRouter(prefix="/integrations")
-templates = Jinja2Templates(directory="app/templates")
 
 
 def _get_or_create_token(

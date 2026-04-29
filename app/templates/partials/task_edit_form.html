@@ -1,62 +1,73 @@
-<div class="p-2.5 rounded-xl border border-[color:var(--accent)]/50 bg-surface2"
+<div class="p-5 rounded-2xl border border-[color:var(--accent)]/30 bg-surface shadow-xl"
      id="task-{{ task.id }}"
      x-data="{ allDay: {{ 'true' if task.is_all_day else 'false' }} }">
   <form hx-put="/tasks/{{ task.id }}"
         hx-target="#task-{{ task.id }}"
         hx-swap="outerHTML"
-        class="space-y-2">
-    <input type="text" name="title" value="{{ task.title }}" required
-           class="w-full text-[12px] bg-transparent border border-base rounded-lg px-2 py-1.5 text-primary focus:outline-none focus:border-[color:var(--accent)]"
-           placeholder="Task title" />
-    <input type="text" name="description" value="{{ task.description or '' }}"
-           class="w-full text-[11px] bg-transparent border border-base rounded-lg px-2 py-1.5 text-muted focus:outline-none focus:border-[color:var(--accent)]"
-           placeholder="Description (optional)" />
-    <label class="flex items-center gap-1.5 text-[11px] text-secondary cursor-pointer">
-      <input type="checkbox" name="is_all_day" x-model="allDay" value="1"
-             {% if task.is_all_day %}checked{% endif %}
-             class="rounded border-base accent-[color:var(--accent)]" />
-      All day
-    </label>
-    <div x-show="!allDay" class="flex gap-1.5">
-      <div class="flex-1">
-        <label class="block text-[10px] text-muted mb-0.5">Start</label>
+        class="space-y-4">
+    <div class="space-y-1">
+      <label class="text-[10px] font-bold text-muted uppercase px-1">Title</label>
+      <input type="text" name="title" value="{{ task.title }}" required
+             class="input-premium"
+             placeholder="Task title" />
+    </div>
+    
+    <div class="space-y-1">
+      <label class="text-[10px] font-bold text-muted uppercase px-1">Description</label>
+      <textarea name="description"
+             class="input-premium min-h-[80px] resize-none"
+             placeholder="Description (optional)">{{ task.description or '' }}</textarea>
+    </div>
+
+    <div class="flex items-center justify-between bg-surface2 p-3 rounded-xl border border-base">
+      <label class="flex items-center gap-2.5 text-[12px] font-medium text-secondary cursor-pointer">
+        <input type="checkbox" name="is_all_day" x-model="allDay" value="1"
+               {% if task.is_all_day %}checked{% endif %}
+               class="w-4 h-4 rounded border-base accent-[color:var(--accent)]" />
+        All day event
+      </label>
+      <select name="task_type"
+              class="text-[11px] bg-surface border border-base rounded-lg px-2 py-1 text-primary focus:outline-none focus:border-[color:var(--accent)] font-medium">
+        <option value="task" {% if task.task_type == 'task' %}selected{% endif %}>Task</option>
+        <option value="event" {% if task.task_type == 'event' %}selected{% endif %}>Event</option>
+      </select>
+    </div>
+
+    <div x-show="!allDay" x-transition class="grid grid-cols-2 gap-3">
+      <div class="space-y-1">
+        <label class="text-[10px] font-bold text-muted uppercase px-1">Start Date & Time</label>
         <input type="datetime-local" name="due_datetime"
                value="{{ task.due_datetime or '' }}"
-               class="w-full text-[11px] bg-transparent border border-base rounded-lg px-2 py-1.5 text-muted focus:outline-none focus:border-[color:var(--accent)]" />
+               class="input-premium" />
       </div>
-      <div class="flex-1">
-        <label class="block text-[10px] text-muted mb-0.5">End</label>
+      <div class="space-y-1">
+        <label class="text-[10px] font-bold text-muted uppercase px-1">End (Optional)</label>
         <input type="datetime-local" name="end_datetime"
                value="{{ task.end_datetime or '' }}"
-               class="w-full text-[11px] bg-transparent border border-base rounded-lg px-2 py-1.5 text-muted focus:outline-none focus:border-[color:var(--accent)]" />
+               class="input-premium" />
       </div>
     </div>
-    <select name="task_type"
-            class="w-full text-[11px] bg-[color:var(--surface2)] border border-base rounded-lg px-2 py-1.5 text-muted focus:outline-none focus:border-[color:var(--accent)]">
-      <option value="task" {% if task.task_type == 'task' %}selected{% endif %}>Task</option>
-      <option value="event" {% if task.task_type == 'event' %}selected{% endif %}>Event</option>
-    </select>
-    <div class="flex gap-1.5 pt-0.5">
-      <button type="submit"
-              class="text-[11px] btn-accent px-3 py-1 rounded font-medium">Save</button>
+
+    <div class="flex gap-2 pt-2">
+      <button type="submit" class="btn-premium flex-1">Save Changes</button>
       <button type="button"
               hx-get="/tasks/{{ task.id }}/edit"
               hx-target="#task-{{ task.id }}"
               hx-swap="outerHTML"
               onclick="htmx.ajax('GET', '/tasks?filter=all', {target:'#settings-content', swap:'innerHTML'})"
-              class="text-[11px] text-muted hover:text-primary px-3 py-1 transition-colors">Cancel</button>
+              class="text-[13px] text-secondary hover:text-primary px-4 py-2 transition-colors font-medium">Cancel</button>
     </div>
 
     {% if providers %}
-    <div class="border-t border-base pt-2 flex flex-wrap gap-1">
-      <span class="text-[10px] text-muted w-full mb-0.5">Push to calendar:</span>
+    <div class="border-t border-base pt-4 flex flex-wrap gap-2">
+      <span class="text-[10px] font-bold text-muted uppercase w-full mb-1">Push to external calendar:</span>
       {% for provider in providers %}
       <button type="button"
               hx-post="/integrations/{{ provider }}/create-task"
               hx-vals='{"title": "{{ task.title|e }}", "description": "{{ task.description|e }}", "dt": "{{ task.due_datetime or '' }}", "task_type": "{{ task.task_type }}", "task_id": "{{ task.id }}"}'
               hx-target="#task-{{ task.id }}"
               hx-swap="outerHTML"
-              class="text-[11px] border border-base rounded px-2 py-0.5 text-secondary hover:bg-surface2 transition-colors">
+              class="text-[11px] border border-base bg-surface rounded-lg px-3 py-1.5 text-secondary hover:text-primary hover:bg-surface2 transition-all font-medium flex items-center gap-1.5">
         {% if provider == 'google' %}<svg class="w-3 h-3" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Google{% elif provider == 'microsoft' %}<svg class="w-3 h-3" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="9" height="9" fill="#F25022"/><rect x="11" y="1" width="9" height="9" fill="#7FBA00"/><rect x="1" y="11" width="9" height="9" fill="#00A4EF"/><rect x="11" y="11" width="9" height="9" fill="#FFB900"/></svg> Microsoft{% endif %}
       </button>
       {% endfor %}

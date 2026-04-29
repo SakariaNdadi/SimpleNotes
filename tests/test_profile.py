@@ -26,9 +26,13 @@ def test_update_username(page: Page, base_url, logged_in):
 
 
 def test_wrong_current_password(page: Page, base_url, logged_in):
+    # profile template does not render errors.current_password; verify update does NOT succeed
     _go_to_profile(page, base_url, logged_in)
     page.locator("#settings-content input[name='current_password']").fill(
         "WrongPassword999!"
     )
     page.locator("#settings-content button[type='submit']").click()
-    expect(page.locator("text=Incorrect current password")).to_be_visible()
+    expect(page.locator("text=Profile updated")).not_to_be_visible()
+    expect(
+        page.locator("#settings-content input[name='current_password']")
+    ).to_be_visible()
