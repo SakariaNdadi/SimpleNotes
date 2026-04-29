@@ -21,7 +21,7 @@
           {% if note.label %}
           <span class="bg-tag text-[11px] font-medium px-2 py-0.5 rounded-full">{{ note.label.title }}</span>
           {% endif %}
-          <time class="text-[11px] text-muted">Deleted {{ note.deleted_at.strftime('%b %d · %H:%M') }}</time>
+          <time class="text-[11px] text-muted">Deleted {{ (note.deleted_at | local_dt(user_tz)).strftime('%b %d · %H:%M') }}</time>
         </div>
         <div class="flex gap-1.5 flex-shrink-0">
           <button hx-post="/notes/{{ note.id }}/restore"

@@ -6,7 +6,7 @@
             {% endif %}
             {% if note.is_edited %}
             <span class="bg-edited text-[10px] px-1.5 py-0.5 rounded"
-                title="Edited {{ note.updated_at.strftime('%b %d, %Y %H:%M') }}">Edited</span>
+                title="Edited {{ (note.updated_at | local_dt(user_tz)).strftime('%b %d, %Y %H:%M') }}">Edited</span>
             {% endif %}
         </div>
         {% if note.summaries %}
@@ -49,7 +49,7 @@
         :class="expanded ? '' : 'note-body-clamped'" @click="expanded = !expanded">
         {{ note.description }}</p>
 
-    <p class="text-[10px] text-muted mt-1.5" title="{{ note.created_at.strftime('%b %d, %Y %H:%M') }}">{{ note.created_at | humanize_date }}</p>
+    <p class="text-[10px] text-muted mt-1.5" title="{{ (note.created_at | local_dt(user_tz)).strftime('%b %d, %Y %H:%M') }}">{{ note.created_at | humanize_date(user_tz) }}</p>
 
     <div id="summary-{{ note.id }}" x-show="showSummary" x-transition x-cloak>
         {% if note.summaries %}
