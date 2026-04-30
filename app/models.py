@@ -228,6 +228,13 @@ class NoteSummary(Base):
     note: Mapped[Note] = relationship("Note", back_populates="summaries")
 
 
+class AppSecret(Base):
+    __tablename__ = "app_secrets"
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    value: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class NoteHistory(Base):
     __tablename__ = "note_history"
 

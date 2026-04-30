@@ -4,7 +4,6 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("SECRET_KEY", "unit-test-secret-key-32-chars-ok!")
 os.environ.setdefault("MEILI_URL", "")
 os.environ.setdefault("EMBEDDING_MODEL", "")
-os.environ.setdefault("FERNET_KEY", "")
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
