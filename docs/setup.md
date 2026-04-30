@@ -36,8 +36,10 @@ The dev stack starts: app server, PostgreSQL + pgvector, Meilisearch, RabbitMQ, 
 ```bash
 # 1. Fill .env with production values (see docs/env.md)
 # 2. Generate SECRET_KEY: openssl rand -hex 32
-# 3. Configure SMTP if you want password reset emails
-# 4. Configure Google/Microsoft OAuth if using integrations
+# 3. Set RABBITMQ_USER and RABBITMQ_PASS (required — no default in prod)
+# 4. Set MEILI_MASTER_KEY and POSTGRES_PASSWORD
+# 5. Configure SMTP if you want password reset emails
+# 6. Configure Google/Microsoft OAuth if using integrations
 
 docker compose -f docker/docker-compose.prod.yml up -d
 ```

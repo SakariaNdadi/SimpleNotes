@@ -5,7 +5,9 @@
 | `ENV` | `dev` | No | `dev` or `prod` |
 | `SECRET_KEY` | *(weak default)* | **Yes** | JWT signing key (32+ chars) |
 | `DATABASE_URL` | *(set by Docker Compose)* | **Yes** | SQLAlchemy connection string |
-| `RABBITMQ_URL` | *(empty)* | No | RabbitMQ connection string (e.g. `amqp://guest:guest@localhost:5672/`). Empty = asyncio fallback |
+| `RABBITMQ_URL` | *(set by Docker Compose)* | **Yes (prod)** | RabbitMQ connection string. Empty = asyncio fallback (dev only) |
+| `RABBITMQ_USER` | *(empty)* | **Yes (prod)** | RabbitMQ username |
+| `RABBITMQ_PASS` | *(empty)* | **Yes (prod)** | RabbitMQ password |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `10080` (7 days) | No | JWT expiry |
 | `APP_BASE_URL` | `http://localhost:8000` | **Yes (prod)** | Used in OAuth redirects and email links |
 | `MAIL_USERNAME` | *(empty)* | No | SMTP username |
