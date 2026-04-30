@@ -51,11 +51,6 @@ jobs:
       - name: Install Playwright browsers
         run: uv run playwright install chromium --with-deps
 
-      - name: Generate Fernet key
-        run: |
-          KEY=$(python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
-          echo "FERNET_KEY=$KEY" >> $GITHUB_ENV
-
       - name: Start dev server
         run: |
           uv run uvicorn main:app --host 0.0.0.0 --port 8000 &
