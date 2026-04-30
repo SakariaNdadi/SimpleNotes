@@ -1,106 +1,130 @@
-<div class="space-y-7">
+<div class="space-y-8">
 
   <!-- Panel Style -->
   <section x-data="{ mode: $store.app.panelMode || 'panel' }">
-    <h3 class="text-xs font-semibold text-muted uppercase tracking-widest mb-3">Panel Style</h3>
-    <div class="grid grid-cols-2 gap-2">
+    <h3 class="text-[11px] font-bold text-muted uppercase tracking-wider mb-4 px-1">Navigation Layout</h3>
+    <div class="grid grid-cols-2 gap-3">
       <button @click="mode = 'panel'; $store.app.panelMode = 'panel'; localStorage.setItem('notes-panel-mode', 'panel')"
-              :class="mode === 'panel' ? 'border-[color:var(--accent)] bg-[color:var(--surface2)] text-primary' : 'border-base text-secondary hover:bg-[color:var(--surface2)]'"
-              class="flex flex-col items-center gap-2 px-3 py-3 rounded-xl border transition-all text-sm">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M9 3H5a2 2 0 00-2 2v14a2 2 0 002 2h4M9 3h10a2 2 0 012 2v14a2 2 0 01-2 2H9M9 3v18"/>
-        </svg>
-        <span class="text-xs font-medium">Side panel</span>
+              :class="mode === 'panel' ? 'border-[color:var(--accent)] bg-[color:var(--accent)]/5 text-primary ring-1 ring-[color:var(--accent)]/20 shadow-sm' : 'border-base text-secondary hover:bg-surface2'"
+              class="flex flex-col items-center gap-3 px-4 py-4 rounded-2xl border transition-all duration-200">
+        <div class="p-2 rounded-lg" :class="mode === 'panel' ? 'bg-[color:var(--accent)] text-white' : 'bg-surface2 text-muted'">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 3H5a2 2 0 00-2 2v14a2 2 0 002 2h4M9 3h10a2 2 0 012 2v14a2 2 0 01-2 2H9M9 3v18"/>
+          </svg>
+        </div>
+        <span class="text-xs font-semibold">Side Panel</span>
       </button>
       <button @click="mode = 'modal'; $store.app.panelMode = 'modal'; localStorage.setItem('notes-panel-mode', 'modal')"
-              :class="mode === 'modal' ? 'border-[color:var(--accent)] bg-[color:var(--surface2)] text-primary' : 'border-base text-secondary hover:bg-[color:var(--surface2)]'"
-              class="flex flex-col items-center gap-2 px-3 py-3 rounded-xl border transition-all text-sm">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM9 9h6m-6 4h6"/>
-        </svg>
-        <span class="text-xs font-medium">Modal</span>
+              :class="mode === 'modal' ? 'border-[color:var(--accent)] bg-[color:var(--accent)]/5 text-primary ring-1 ring-[color:var(--accent)]/20 shadow-sm' : 'border-base text-secondary hover:bg-surface2'"
+              class="flex flex-col items-center gap-3 px-4 py-4 rounded-2xl border transition-all duration-200">
+        <div class="p-2 rounded-lg" :class="mode === 'modal' ? 'bg-[color:var(--accent)] text-white' : 'bg-surface2 text-muted'">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM9 9h6m-6 4h6"/>
+          </svg>
+        </div>
+        <span class="text-xs font-semibold">Centered Modal</span>
       </button>
     </div>
   </section>
 
-  <!-- Font Picker -->
+  <!-- Typography -->
   <section>
-    <h3 class="text-xs font-semibold text-muted uppercase tracking-widest mb-3">Font</h3>
-    <div class="space-y-1.5">
+    <h3 class="text-[11px] font-bold text-muted uppercase tracking-wider mb-4 px-1">Typography</h3>
+    <div class="space-y-2">
       {% for font in fonts %}
       <form hx-post="/preferences/font" hx-target="#font-save-status" hx-swap="innerHTML">
         <input type="hidden" name="font" value="{{ font.id }}">
         <button type="submit"
-                class="w-full text-left px-3 py-2.5 rounded-xl border transition-all text-sm
-                       {% if prefs.font == font.id %}border-[color:var(--accent)] bg-[color:var(--surface2)] font-medium text-primary{% else %}border-base text-secondary hover:bg-[color:var(--surface2)] hover:border-[color:var(--accent)]{% endif %}"
+                class="w-full text-left px-4 py-3 rounded-xl border transition-all duration-200 group flex items-center justify-between
+                       {% if prefs.font == font.id %}border-[color:var(--accent)] bg-[color:var(--accent)]/5 font-semibold text-primary{% else %}border-base text-secondary hover:border-accent/30 hover:bg-surface2{% endif %}"
                 style="font-family: {{ font.css }}">
-          {{ font.label }}
+          <span>{{ font.label }}</span>
+          {% if prefs.font == font.id %}
+          <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          {% endif %}
         </button>
       </form>
       {% endfor %}
     </div>
-    <div id="font-save-status" class="mt-1.5 h-4"></div>
+    <div id="font-save-status" class="mt-2 text-center h-4"></div>
   </section>
 
-  <!-- AI Summaries -->
-  <section>
-    <h3 class="text-xs font-semibold text-muted uppercase tracking-widest mb-3">AI Summaries</h3>
+  <!-- Core Settings List -->
+  <section class="bg-surface rounded-2xl border border-base overflow-hidden divide-y divide-base/50">
+    <!-- AI Summaries Row -->
     <form hx-post="/preferences/ai-summary-toggle" hx-target="#summary-save-status" hx-swap="innerHTML"
-          class="flex items-center justify-between p-3 rounded-xl border border-base hover:bg-[color:var(--surface2)] transition-colors">
-      <div>
-        <p class="text-sm font-medium text-primary">Save summaries</p>
-        <p class="text-xs text-muted mt-0.5">Summaries are stored and shown without re-generating</p>
+          class="flex items-center justify-between p-4 hover:bg-surface2 transition-colors group">
+      <div class="min-w-0">
+        <p class="text-[14px] font-semibold text-primary tracking-tight">AI Summaries</p>
+        <p class="text-xs text-muted mt-0.5">Keep generated summaries for quick reference</p>
       </div>
-      <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+      <label class="relative inline-flex items-center cursor-pointer ml-4 flex-shrink-0">
         <input type="checkbox" name="save_ai_summaries" class="sr-only peer"
                {% if prefs.save_ai_summaries %}checked{% endif %}
                onchange="this.closest('form').requestSubmit()">
-        <div class="w-9 h-5 bg-[color:var(--border)] peer-checked:bg-[color:var(--accent)] rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
+        <div class="w-10 h-6 bg-[color:var(--border)] peer-checked:bg-[color:var(--accent)] rounded-full transition-all duration-200 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-[20px] after:w-[20px] after:transition-all after:shadow-sm peer-checked:after:translate-x-4"></div>
       </label>
     </form>
-    <div id="summary-save-status" class="mt-1.5 h-4"></div>
-  </section>
 
-  <!-- Edit History Depth -->
-  <section>
-    <h3 class="text-xs font-semibold text-muted uppercase tracking-widest mb-3">Edit History</h3>
+    <!-- Edit History Row -->
     <form hx-post="/preferences/history-depth" hx-target="#history-save-status" hx-swap="innerHTML"
-          class="flex items-center justify-between p-3 rounded-xl border border-base">
-      <div>
-        <p class="text-sm font-medium text-primary">Versions to keep</p>
-        <p class="text-xs text-muted mt-0.5">0 = off, up to 5 past edits saved per note</p>
+          class="flex items-center justify-between p-4 hover:bg-surface2 transition-colors">
+      <div class="min-w-0">
+        <p class="text-[14px] font-semibold text-primary tracking-tight">Edit History</p>
+        <p class="text-xs text-muted mt-0.5">Number of previous versions to preserve</p>
       </div>
-      <select name="max_edit_history"
-              class="input-base text-sm px-2 py-1.5 rounded-lg border ml-3 flex-shrink-0"
-              onchange="this.closest('form').requestSubmit()">
-        {% for i in range(6) %}
-        <option value="{{ i }}" {% if prefs.max_edit_history == i %}selected{% endif %}>{{ i }}</option>
-        {% endfor %}
-      </select>
+      <div class="relative ml-4 flex-shrink-0">
+        <select name="max_edit_history"
+                class="input-premium py-1.5 pl-3 pr-8 appearance-none bg-surface2 border-base text-sm font-medium focus:ring-2 focus:ring-accent/20"
+                onchange="this.closest('form').requestSubmit()">
+          {% for i in range(6) %}
+          <option value="{{ i }}" {% if prefs.max_edit_history == i %}selected{% endif %}>{{ i }} version{{ 's' if i != 1 }}</option>
+          {% endfor %}
+        </select>
+        <div class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-muted">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
     </form>
-    <div id="history-save-status" class="mt-1.5 h-4"></div>
   </section>
+  <div class="flex justify-between px-4 mt-[-24px]">
+    <div id="summary-save-status" class="text-[11px]"></div>
+    <div id="history-save-status" class="text-[11px]"></div>
+  </div>
 
   <!-- Languages -->
   <section>
-    <h3 class="text-xs font-semibold text-muted uppercase tracking-widest mb-1">Languages I write in</h3>
-    <p class="text-xs text-muted mb-3">Used to improve AI search across multilingual notes</p>
+    <div class="px-1 mb-4">
+      <h3 class="text-[11px] font-bold text-muted uppercase tracking-wider">Multilingual Support</h3>
+      <p class="text-xs text-muted mt-1">Select languages to improve AI search accuracy</p>
+    </div>
+    
     <form hx-post="/preferences/languages" hx-target="#lang-save-status" hx-swap="innerHTML">
-      <div class="grid grid-cols-2 gap-1.5 mb-2">
+      <div class="grid grid-cols-2 gap-2 mb-4">
         {% for lang in languages %}
-        <label class="flex items-center gap-2 px-3 py-2 rounded-xl border border-base hover:bg-[color:var(--surface2)] cursor-pointer transition-colors text-sm">
-          <input type="checkbox" name="languages" value="{{ lang.code }}"
-                 {% if lang.code in selected_langs %}checked{% endif %}
-                 class="w-3.5 h-3.5 rounded accent-[color:var(--accent)]">
-          <span class="text-secondary">{{ lang.label }}</span>
+        <label class="group relative flex items-center gap-3 px-4 py-3 rounded-xl border border-base hover:border-accent/30 hover:bg-surface2 cursor-pointer transition-all duration-200">
+          <div class="relative flex items-center justify-center w-4 h-4">
+            <input type="checkbox" name="languages" value="{{ lang.code }}"
+                   {% if lang.code in selected_langs %}checked{% endif %}
+                   class="peer sr-only">
+            <div class="w-full h-full border-2 border-base rounded transition-all duration-200 peer-checked:bg-[color:var(--accent)] peer-checked:border-[color:var(--accent)]"></div>
+            <svg class="absolute w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <span class="text-[13px] font-medium text-secondary group-hover:text-primary transition-colors">{{ lang.label }}</span>
         </label>
         {% endfor %}
       </div>
-      <button type="submit" class="btn-accent text-xs font-medium px-3 py-1.5 rounded-lg w-full">Save languages</button>
+      <button type="submit" class="w-full btn-premium py-2.5">Update Language Settings</button>
     </form>
-    <div id="lang-save-status" class="mt-1.5 h-4"></div>
+    <div id="lang-save-status" class="mt-2 text-center h-4"></div>
   </section>
 
 </div>
