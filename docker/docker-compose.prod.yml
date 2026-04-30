@@ -16,6 +16,21 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3.13-alpine
+    container_name: rabbitmq-prod
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?RABBITMQ_USER must be set}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:?RABBITMQ_PASS must be set}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   meilisearch:
     image: getmeili/meilisearch:latest
     container_name: meilisearch
@@ -26,6 +41,7 @@ services:
       - MEILI_ENV=production
     volumes:
       - meili_data:/meili_data
+    restart: unless-stopped
 
   app:
     build:
@@ -34,16 +50,36 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       - ENV=prod
       - DATABASE_URL=postgresql://${POSTGRES_USER:-notes}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-notes}
       - MEILI_URL=http://meilisearch:7700
       - MEILI_KEY=${MEILI_MASTER_KEY:?MEILI_MASTER_KEY must be set}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:?RABBITMQ_USER must be set}:${RABBITMQ_PASS:?RABBITMQ_PASS must be set}@rabbitmq:5672/
+    ports:
+      - "8000:8000"
     expose:
       - "8000"
     networks:
       - default
       - dokploy-network
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-notes}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-notes}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:?RABBITMQ_USER must be set}:${RABBITMQ_PASS:?RABBITMQ_PASS must be set}@rabbitmq:5672/
+    command: uv run python -m app.worker
     restart: unless-stopped
 
   pgadmin:
@@ -62,6 +98,7 @@ services:
 
 volumes:
   postgres_data:
+  rabbitmq_data:
   meili_data:
   pgadmin_data:
 

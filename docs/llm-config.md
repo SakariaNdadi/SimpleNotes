@@ -6,7 +6,7 @@ Configure your LLM in Settings → AI / LLM after logging in.
 ## Cloud Providers
 
 | Provider | Provider name | Model example | Base URL |
-|----------|--------------|---------------|----------|
+| -------- | ------------- | ------------- | -------- |
 | OpenAI | `openai` | `gpt-4o` | *(leave empty)* |
 | Anthropic | `anthropic` | `claude-sonnet-4-6` | *(leave empty)* |
 | Google Gemini | `gemini` | `gemini/gemini-2.0-flash` | *(leave empty)* |
@@ -38,4 +38,4 @@ If LiteLLM can't reach your endpoint, the app falls back to a direct `httpx` cal
 
 ## API Key Security
 
-API keys are encrypted at rest using Fernet symmetric encryption (set `FERNET_KEY` in `.env`). They are never exposed in the UI after saving.
+API keys are encrypted at rest using Fernet symmetric encryption. The encryption key is generated automatically on first run and stored in the database — no configuration required. Keys are never exposed in the UI after saving.

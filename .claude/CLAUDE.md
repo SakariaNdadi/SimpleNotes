@@ -9,19 +9,34 @@ Read `.claude/PROJECT_STRUCTURE.md` before editing any file. It contains the ful
 - **Backend**: FastAPI, SQLAlchemy 2.0 (sync), Pydantic Settings
 - **Templates**: Jinja2 + HTMX (server-driven partials, not a SPA)
 - **LLM**: LiteLLM abstraction — never call provider SDKs directly
+- **Job Queue**: `app/jobs/` — RabbitMQ-backed async broker; falls back to `asyncio.create_task()` when `RABBITMQ_URL` is empty or unavailable. Worker process: `app/worker.py`
 - **Search**: Meilisearch (full-text) + pgvector (semantic, PostgreSQL only)
 - **Auth**: JWT via python-jose, cookies, bcrypt passwords, Fernet encryption
-- **DB**: SQLite (dev/unit tests) or PostgreSQL (integration/prod)
+- **DB**: PostgreSQL (dev/prod/integration) | SQLite in-memory (unit tests only)
+
+---
+
+## Docker
+
+Docker is required for all development and integration testing.
+
+```bash
+# Full dev stack (app + PostgreSQL + Meilisearch + RabbitMQ + worker)
+docker compose -f docker/docker-compose.dev.yml up -d
+
+# Test DB only (pgvector on port 5433)
+docker compose -f docker/docker-compose.test.yml up -d
+```
 
 ---
 
 ## Before Editing Any File
 
-- **Routers**: Check which services and dependencies they call. Router changes cascade.
+- **Routers**: Check which services and dependencies they call. Router changes cascade. Nine routers registered in `main.py`: `auth`, `profile`, `notes`, `labels`, `ai`, `integrations`, `integrations_panel`, `tasks`, `preferences`.
 - **models.py**: Any schema change requires checking all services that query that model.
-- **auth/utils.py**: Fernet key is generated at startup in `main.py`. Encryption/decryption must use `fernet_encrypt` / `fernet_decrypt` from this file — never roll your own.
-- **config.py**: All env vars flow through the `settings` singleton. Do not read `os.environ` directly in app code.
-- **Background tasks** (`embed_and_index`): Fire-and-forget. Failures are silent. Do not assume indexing succeeded synchronously.
+- **auth/utils.py**: Fernet key is lazily initialized on first call to `encrypt_value`/`decrypt_value` via `_get_fernet()` (`@lru_cache`) — stored in the `AppSecret` table, falls back to an ephemeral key when the table is absent (unit test context). Always use `encrypt_value` / `decrypt_value` from this file — never roll your own.
+- **config.py**: All env vars flow through the `settings` singleton. Do not read `os.environ` directly in app code. Use `settings.is_postgres` to guard vector operations — do not do manual string checks on `settings.database_url`.
+- **Background tasks** (`embed_and_index`): Fire-and-forget via the job broker. Failures are silent. Do not assume indexing succeeded synchronously.
 - **HTMX routes**: Return HTML fragments only. Do not return JSON from routes that HTMX calls — except AI endpoints which return both.
 
 ---
@@ -29,7 +44,7 @@ Read `.claude/PROJECT_STRUCTURE.md` before editing any file. It contains the ful
 ## Database Rules
 
 - Soft delete only: set `is_deleted=True`. Never hard delete a note except via the permanent delete endpoint (`DELETE /notes/{id}/permanent`).
-- Vector column (`embedding`) only exists on PostgreSQL. Guard any vector operation with a config check (`settings.database_url` contains `postgresql`).
+- Vector column (`embedding`) only exists on PostgreSQL. Guard any vector operation with `settings.is_postgres`.
 - Integration tests use savepoint rollback — each test gets a clean slate. Do not commit inside tests.
 - Never add a raw `session.commit()` inside a service function that receives an injected `db` session — the router or test controls the transaction boundary.
 
@@ -41,7 +56,7 @@ Read `.claude/PROJECT_STRUCTURE.md` before editing any file. It contains the ful
 | Layer | Location | DB |
 |-------|----------|----|
 | Unit | `tests/unit/` | SQLite in-memory |
-| Integration | `tests/integration/` | PostgreSQL `localhost:5432` (real DB, no mocks) |
+| Integration | `tests/integration/` | PostgreSQL `localhost:5433` (docker-compose.test.yml) |
 | E2E | `tests/e2e/`, `tests/test_tasks_e2e.py`, `tests/test_notes.py` | Playwright against live server |
 
 ### Rules
@@ -49,13 +64,15 @@ Read `.claude/PROJECT_STRUCTURE.md` before editing any file. It contains the ful
 - Unit tests use SQLite in-memory engine (not TestClient). Acceptable to mock external services (Meili, LLM) at this layer.
 - E2E tests use Playwright. Fixtures: `logged_in`, `base_url`, `wait_for_alpine`.
 - Always run the relevant test layer after a change before marking done.
-- Integration tests require `TEST_DATABASE_URL="postgresql+psycopg://notes:notes@localhost:5432/notes_test"`.
 
 ### Commands
 ```bash
-pytest tests/unit/                   # unit (SQLite, no server needed)
-TEST_DATABASE_URL="postgresql+psycopg://${POSTGRES_USER:-notes}:${POSTGRES_PASSWORD:-notes}@localhost:5432/${POSTGRES_DB:-notes_test}" pytest tests/integration/   # integration
-pytest tests/e2e/ --headed           # e2e (requires live server at localhost:8000 + playwright)
+# Start test DB first
+docker compose -f docker/docker-compose.test.yml up -d
+
+pytest tests/unit/
+TEST_DATABASE_URL="postgresql+psycopg://notes:notes@localhost:5433/notes_test" pytest tests/integration/
+pytest tests/e2e/ --headed           # requires live server at localhost:8000
 pytest tests/test_tasks_e2e.py       # legacy e2e tasks
 pytest tests/test_notes.py           # legacy e2e notes
 ```
@@ -67,10 +84,10 @@ pytest tests/test_notes.py           # legacy e2e notes
 1. `ruff check` — linting
 2. `ruff format --check` — formatting
 3. `pytest tests/unit/` — unit tests (SQLite, always runs)
-4. `pytest tests/integration/` — integration tests (requires PostgreSQL at `localhost:5432`)
+4. `pytest tests/integration/` — integration tests (requires PostgreSQL; start with `docker compose -f docker/docker-compose.test.yml up -d`)
 5. `pytest tests/e2e/ tests/test_notes.py tests/test_tasks_e2e.py` — E2E tests (skipped automatically if no server at `localhost:8000`)
 
-To run E2E tests in the hook, start the server before committing:
+To run E2E tests in the hook, start the full dev stack before committing:
 
 ```bash
 docker compose -f docker/docker-compose.dev.yml up -d
@@ -171,14 +188,29 @@ page.evaluate("""() => {
 
 ---
 
-## Fixtures Reference (`tests/integration/conftest.py`)
+## Fixtures Reference
+
+### Integration (`tests/integration/conftest.py`)
 
 | Fixture | Returns |
 | --- | --- |
-| `engine` | SQLAlchemy engine (session-scoped) |
+| `engine` | SQLAlchemy engine (session-scoped, PostgreSQL) |
 | `db` | Session with savepoint rollback |
 | `client` | TestClient with overridden `get_db` |
 | `db_user` | `(User, password)` tuple |
 | `auth_client` | `(client, user)` with JWT cookie set |
 | `db_note` | Note owned by `db_user` |
-| `db_task` | NoteTask owned by `db_user` on `db_note` |
+| `db_task` | NoteTask (status="local", source="manual") owned by `db_user` on `db_note` |
+| `db_label` | Label owned by `db_user` |
+| `db_llm_config` | UserLLMConfig (openai/gpt-4o-mini, encrypted key) owned by `db_user` |
+| `db_discovered_task` | NoteTask (status="discovered", source="nlp") owned by `db_user` on `db_note` |
+
+### Unit (`tests/unit/conftest.py`)
+
+| Fixture | Returns |
+| --- | --- |
+| `engine` | SQLAlchemy engine (module-scoped, SQLite in-memory) |
+| `db` | Session with rollback |
+| `unit_user` | `User` |
+| `unit_note` | `Note` owned by `unit_user` |
+| `unit_task` | `NoteTask` (status="local") on `unit_note` |

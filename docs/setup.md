@@ -2,36 +2,31 @@
 
 ## Prerequisites
 
-- Python 3.13+ (or Docker)
-- [uv](https://github.com/astral-sh/uv) (Python package manager)
+- Docker and Docker Compose
 
 ## Development Setup
 
 ```bash
 # 1. Clone
-git clone https://github.com/your-repo/notes.git && cd notes
+git clone https://github.com/SakariaNdadi/notes.git && cd notes
 
 # 2. Copy env
 cp .env.example .env
 
-# 3. Generate a Fernet key for encrypting API keys/tokens
-python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-# Paste output into FERNET_KEY in .env
+# 3. Set a strong SECRET_KEY in .env (32+ chars, used to sign JWT tokens)
 
-# 4. Set a strong SECRET_KEY in .env
-
-# 5. Install deps
-uv sync
-
-# 6. Run
-uv run uvicorn main:app --reload
+# 4. Start the full dev stack
+docker compose -f docker/docker-compose.dev.yml up -d
 ```
 
-Visit http://localhost:8000
+Visit [http://localhost:8000](http://localhost:8000).
+
+The dev stack starts: app server, PostgreSQL + pgvector, Meilisearch, RabbitMQ, and a background worker. The Fernet encryption key is generated automatically on first run — no manual step required.
 
 ## Production Setup
 
 ### Requirements
+
 - Docker & Docker Compose
 - Domain with DNS pointing to your server
 - SSL certificate (Let's Encrypt recommended)
@@ -41,12 +36,12 @@ Visit http://localhost:8000
 ```bash
 # 1. Fill .env with production values (see docs/env.md)
 # 2. Generate SECRET_KEY: openssl rand -hex 32
-# 3. Generate FERNET_KEY (see above)
-# 4. Configure SMTP if you want password reset emails
-# 5. Configure Google/Microsoft OAuth if using integrations
+# 3. Set RABBITMQ_USER and RABBITMQ_PASS (required — no default in prod)
+# 4. Set MEILI_MASTER_KEY and POSTGRES_PASSWORD
+# 5. Configure SMTP if you want password reset emails
+# 6. Configure Google/Microsoft OAuth if using integrations
 
-cd docker
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker/docker-compose.prod.yml up -d
 ```
 
 pgAdmin is available at `http://your-server:5050`. Set `PGADMIN_EMAIL` and `PGADMIN_PASSWORD` in `.env`.
