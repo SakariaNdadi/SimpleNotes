@@ -60,6 +60,11 @@ services:
       - RABBITMQ_URL=amqp://${RABBITMQ_USER:?RABBITMQ_USER must be set}:${RABBITMQ_PASS:?RABBITMQ_PASS must be set}@rabbitmq:5672/
     ports:
       - "8000:8000"
+    expose:
+      - "8000"
+    networks:
+      - default
+      - dokploy-network
     restart: unless-stopped
 
   worker:
@@ -96,3 +101,8 @@ volumes:
   rabbitmq_data:
   meili_data:
   pgadmin_data:
+
+networks:
+  default:
+  dokploy-network:
+    external: true
