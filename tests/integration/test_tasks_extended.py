@@ -71,8 +71,51 @@ def test_confirm_discovered_task_transitions_to_local(
     assert db_discovered_task.title == "Confirmed Title"
 
 
+def test_confirm_discovered_task_returns_oob_task_card(
+    auth_client, db, db_discovered_task
+):
+    """Confirm returns OOB HTML: task card wrapped in hx-swap-oob div targeting #created-tasks-list.
+    Primary response is empty so HTMX removes the disc-task card via outerHTML swap.
+    """
+    client, _ = auth_client
+    r = client.post(
+        f"/tasks/{db_discovered_task.id}/confirm",
+        data={
+            "title": "Rendered Task",
+            "description": "",
+            "due_datetime": "",
+            "end_datetime": "",
+            "is_all_day": "",
+            "task_type": "task",
+        },
+    )
+    assert r.status_code == 200
+    assert "Rendered Task" in r.text
+    assert "task-card-premium" in r.text
+    assert 'hx-swap-oob="afterbegin:#created-tasks-list"' in r.text
+
+
+def test_confirm_discovered_task_htmx_trigger_header(
+    auth_client, db, db_discovered_task
+):
+    """Confirm response carries HX-Trigger so task count badge updates."""
+    client, _ = auth_client
+    r = client.post(
+        f"/tasks/{db_discovered_task.id}/confirm",
+        data={
+            "title": "Task",
+            "description": "",
+            "due_datetime": "",
+            "end_datetime": "",
+            "is_all_day": "",
+            "task_type": "task",
+        },
+    )
+    assert r.headers.get("HX-Trigger") == "taskCountChanged"
+
+
 def test_confirm_non_discovered_task_status_unchanged(auth_client, db, db_task):
-    """Decision Table: confirming a local task leaves status unchanged."""
+    """Decision Table: confirming a local task leaves status unchanged and returns empty."""
     client, _ = auth_client
     original_status = db_task.status  # "local"
     r = client.post(
@@ -87,8 +130,26 @@ def test_confirm_non_discovered_task_status_unchanged(auth_client, db, db_task):
         },
     )
     assert r.status_code == 200
+    assert r.text == ""
     db.refresh(db_task)
     assert db_task.status == original_status
+
+
+def test_tasks_panel_shows_empty_placeholder_when_no_tasks(auth_client):
+    """EP: tasks panel with no tasks renders the empty-tasks-msg placeholder."""
+    client, _ = auth_client
+    r = client.get("/tasks")
+    assert r.status_code == 200
+    assert "No tasks yet" in r.text
+
+
+def test_tasks_panel_no_empty_placeholder_when_tasks_exist(auth_client, db_task):
+    """EP: tasks panel with tasks does not show the empty state message."""
+    client, _ = auth_client
+    r = client.get("/tasks")
+    assert r.status_code == 200
+    assert "No tasks yet" not in r.text
+    assert db_task.title in r.text
 
 
 # ── Dismiss task ──────────────────────────────────────────────────────────────

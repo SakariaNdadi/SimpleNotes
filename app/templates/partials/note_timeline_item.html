@@ -21,7 +21,7 @@
                 {% if note.is_edited %}
                 <span
                     class="bg-gray-100 text-gray-500 border border-gray-200 text-[11px] px-2.5 py-0.5 rounded-full shrink-0 font-medium"
-                    title="Edited {{ note.updated_at.strftime('%b %d, %Y %H:%M') }}">
+                    title="Edited {{ (note.updated_at | local_dt(user_tz)).strftime('%b %d, %Y %H:%M') }}">
                     Edited
                 </span>
                 {% endif %}
@@ -39,8 +39,8 @@
                 {% endif %}
             </div>
             <time class="text-[11px] text-gray-400 font-medium whitespace-nowrap flex-shrink-0 mt-0.5"
-                title="{{ note.created_at.strftime('%b %d, %Y %H:%M') }}">
-                {{ note.created_at | humanize_date }}
+                title="{{ (note.created_at | local_dt(user_tz)).strftime('%b %d, %Y %H:%M') }}">
+                {{ note.created_at | humanize_date(user_tz) }}
             </time>
         </div>
 

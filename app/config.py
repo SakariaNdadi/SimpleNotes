@@ -9,7 +9,6 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./notes.db"
     SECRET_KEY: str = "change-this-in-production-use-32-chars-min"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
-    FERNET_KEY: str = ""  # generated on first run if empty
 
     # Email (SMTP)
     MAIL_USERNAME: str = ""
@@ -29,6 +28,9 @@ class Settings(BaseSettings):
     MICROSOFT_CLIENT_ID: str = ""
     MICROSOFT_CLIENT_SECRET: str = ""
     MICROSOFT_TENANT_ID: str = "common"
+
+    # Queue
+    RABBITMQ_URL: str = ""  # e.g. amqp://guest:guest@localhost:5672/ — empty = disabled
 
     # Search
     MEILI_URL: str = ""
