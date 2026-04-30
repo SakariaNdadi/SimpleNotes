@@ -1,106 +1,154 @@
-<div class="llm-settings space-y-4" x-data="{ showForm: false }">
+<div class="llm-settings space-y-6" x-data="{ showForm: false }">
   {% if success %}
-  <div class="bg-success text-sm px-4 py-3 rounded-xl">{{ success }}</div>
+  <div class="bg-success/10 border border-success/20 text-success text-[13px] px-4 py-3 rounded-xl flex items-center gap-2">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    </svg>
+    {{ success }}
+  </div>
   {% endif %}
 
-  <div class="space-y-2">
+  <div class="space-y-3">
     {% if configs %}
     {% for cfg in configs %}
-    <div class="flex items-center justify-between p-3 rounded-xl border border-base {% if cfg.is_active %}bg-ai-surface border-[color:var(--ai-border)]{% else %}bg-surface2{% endif %}"
+    <div class="group relative flex flex-col p-4 rounded-2xl border transition-all duration-200
+                {% if cfg.is_active %}bg-[color:var(--accent)]/5 border-[color:var(--accent)]/30 ring-1 ring-[color:var(--accent)]/10 shadow-sm
+                {% else %}bg-surface border-base hover:border-accent/40{% endif %}"
          id="llm-cfg-{{ cfg.id }}">
-      <div class="min-w-0">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-sm font-medium text-primary">{{ cfg.provider_name }}</span>
-          <span class="text-xs text-muted">{{ cfg.model_name }}</span>
-          {% if cfg.is_active %}
-          <span class="text-xs bg-tag px-2 py-0.5 rounded-full font-medium">Active</span>
-          {% else %}
-          <span class="text-xs text-muted px-2 py-0.5 rounded-full border border-base">Inactive</span>
-          {% endif %}
+      
+      <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-[14px] font-semibold text-primary tracking-tight">{{ cfg.provider_name }}</span>
+            {% if cfg.is_active %}
+            <span class="flex items-center gap-1 text-[10px] bg-[color:var(--accent)] text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+              <span class="w-1 h-1 bg-white rounded-full animate-pulse"></span>
+              Active
+            </span>
+            {% endif %}
+          </div>
+          <div class="flex items-center gap-2 text-xs text-secondary">
+            <span class="bg-surface2 px-1.5 py-0.5 rounded border border-base">{{ cfg.model_name }}</span>
+            {% if cfg.base_url %}
+            <span class="truncate max-w-[150px] text-muted">{{ cfg.base_url }}</span>
+            {% endif %}
+          </div>
         </div>
-        {% if cfg.base_url %}
-        <p class="text-xs text-muted mt-0.5 truncate">{{ cfg.base_url }}</p>
-        {% endif %}
+
+        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button hx-get="/settings/llm/{{ cfg.id }}/edit"
+                  hx-target="#llm-cfg-{{ cfg.id }}"
+                  hx-swap="outerHTML"
+                  class="p-1.5 text-muted hover:text-primary hover:bg-surface2 rounded-lg transition-colors"
+                  title="Edit">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+          <button hx-delete="/settings/llm/{{ cfg.id }}"
+                  hx-target=".llm-settings" hx-swap="outerHTML"
+                  hx-confirm="Remove this config?"
+                  class="p-1.5 text-muted hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Remove">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
       </div>
-      <div class="flex gap-1 ml-2 flex-shrink-0">
-        <button hx-get="/settings/llm/{{ cfg.id }}/edit"
-                hx-target="#llm-cfg-{{ cfg.id }}"
-                hx-swap="outerHTML"
-                class="text-xs text-secondary hover:text-primary px-2 py-1">Edit</button>
+
+      <div class="mt-4 pt-3 border-t border-base/50 flex items-center justify-between">
         {% if cfg.is_active %}
         <button hx-post="/settings/llm/{{ cfg.id }}/deactivate"
                 hx-target=".llm-settings" hx-swap="outerHTML"
-                class="text-xs text-muted hover:text-primary px-2 py-1">Deactivate</button>
+                class="text-[12px] font-medium text-muted hover:text-primary transition-colors">
+          Deactivate
+        </button>
         {% else %}
         <button hx-post="/settings/llm/{{ cfg.id }}/activate"
                 hx-target=".llm-settings" hx-swap="outerHTML"
-                class="text-xs text-accent hover:underline px-2 py-1">Activate</button>
+                class="text-[12px] font-semibold text-accent hover:text-accent-h transition-colors">
+          Set as default
+        </button>
         {% endif %}
-        <button hx-delete="/settings/llm/{{ cfg.id }}"
-                hx-target=".llm-settings" hx-swap="outerHTML"
-                hx-confirm="Remove this config?"
-                class="text-xs text-red-500 hover:underline px-2 py-1">Remove</button>
       </div>
     </div>
     {% endfor %}
     {% else %}
-    <div class="text-center py-8 text-muted">
-      <div class="mb-2 flex justify-center">
-        <svg class="w-8 h-8 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="text-center py-12 bg-surface2/50 rounded-2xl border border-dashed border-base">
+      <div class="w-12 h-12 bg-surface rounded-2xl border border-base flex items-center justify-center mx-auto mb-4 shadow-sm">
+        <svg class="w-6 h-6 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 002 2v10a2 2 0 002 2z"/>
         </svg>
       </div>
-      <p class="text-sm">No LLM configured yet</p>
+      <p class="text-[14px] font-medium text-primary mb-1">No AI Models Configured</p>
+      <p class="text-xs text-muted">Connect an LLM provider to enable AI features.</p>
     </div>
     {% endif %}
   </div>
 
   <button @click="showForm = !showForm"
-          class="btn-accent text-sm font-medium px-4 py-2 rounded-xl w-full">+ Add LLM</button>
+          class="w-full btn-premium flex items-center justify-center gap-2 py-3">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+    </svg>
+    Add new model
+  </button>
 
-  <form x-show="showForm" x-transition
+  <form x-show="showForm" x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-y-4"
+        x-transition:enter-end="opacity-100 translate-y-0"
         hx-post="/settings/llm"
         hx-target=".llm-settings"
         hx-swap="outerHTML"
         hx-on::after-request="showForm = false"
-        class="space-y-3 p-4 bg-surface2 rounded-xl border border-base">
-    <div>
-      <label class="block text-xs font-medium text-secondary mb-1">Provider name</label>
-      <input type="text" name="provider_name" required
-             placeholder="openai / anthropic / ollama / custom"
-             class="input-base w-full px-3 py-2 rounded-lg border text-sm" />
+        class="space-y-4 p-5 bg-surface border border-base rounded-2xl shadow-xl">
+    <div class="grid grid-cols-2 gap-4">
+      <div class="col-span-1">
+        <label class="block text-[11px] font-bold text-muted uppercase tracking-wider mb-1.5 ml-1">Provider</label>
+        <input type="text" name="provider_name" required
+               placeholder="e.g. OpenAI"
+               class="input-premium" />
+      </div>
+      <div class="col-span-1">
+        <label class="block text-[11px] font-bold text-muted uppercase tracking-wider mb-1.5 ml-1">Model ID</label>
+        <input type="text" name="model_name" required
+               placeholder="e.g. gpt-4o"
+               class="input-premium" />
+      </div>
     </div>
     <div>
-      <label class="block text-xs font-medium text-secondary mb-1">Model name</label>
-      <input type="text" name="model_name" required
-             placeholder="gpt-4o / claude-3-5-sonnet / gemma3 / deepseek-r1"
-             class="input-base w-full px-3 py-2 rounded-lg border text-sm" />
-    </div>
-    <div>
-      <label class="block text-xs font-medium text-secondary mb-1">
-        Base URL <span class="text-muted font-normal">(Ollama / self-hosted — leave empty for cloud)</span>
+      <label class="block text-[11px] font-bold text-muted uppercase tracking-wider mb-1.5 ml-1">
+        Base URL <span class="text-[10px] font-normal lowercase">(Optional for local models)</span>
       </label>
       <input type="url" name="base_url"
              placeholder="http://localhost:11434"
-             class="input-base w-full px-3 py-2 rounded-lg border text-sm" />
+             class="input-premium" />
     </div>
     <div>
-      <label class="block text-xs font-medium text-secondary mb-1">
-        API Key <span class="text-muted font-normal">(encrypted at rest)</span>
+      <label class="block text-[11px] font-bold text-muted uppercase tracking-wider mb-1.5 ml-1">
+        API Key <span class="text-[10px] font-normal lowercase">(Encrypted)</span>
       </label>
-      <input type="password" name="api_key" placeholder="sk-… (leave empty for Ollama)"
-             class="input-base w-full px-3 py-2 rounded-lg border text-sm" />
+      <input type="password" name="api_key" placeholder="••••••••••••••••"
+             class="input-premium" />
     </div>
-    <div class="flex gap-2">
-      <button type="submit" class="btn-accent text-sm font-medium px-4 py-2 rounded-lg flex-1">Save & activate</button>
+    <div class="flex gap-3 pt-2">
+      <button type="submit" class="btn-premium flex-1">Save Connection</button>
       <button type="button" @click="showForm = false"
-              class="text-sm text-secondary hover:text-primary px-4 py-2 rounded-lg border border-base hover:bg-surface transition-colors">Cancel</button>
+              class="px-4 py-2 text-[13px] font-medium text-secondary hover:text-primary hover:bg-surface2 rounded-xl border border-base transition-colors">
+        Cancel
+      </button>
     </div>
   </form>
 
-  <p class="text-xs text-muted leading-relaxed">
-    Supports OpenAI, Anthropic, Gemini, Ollama (Gemma, DeepSeek, Llama), and any OpenAI-compatible endpoint.
-    See <a href="/docs/llm-config" class="text-accent hover:underline" target="_blank">docs</a>.
-  </p>
+  <div class="p-4 bg-surface2/50 rounded-xl border border-base flex gap-3">
+    <svg class="w-5 h-5 text-accent flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <p class="text-[12px] text-secondary leading-snug">
+      We support any OpenAI-compatible API. This includes <strong>Anthropic</strong>, <strong>Gemini</strong>, and <strong>Ollama</strong>.
+      Read our <a href="/docs/llm-config" class="text-accent hover:underline font-medium" target="_blank">setup guide</a> for more info.
+    </p>
+  </div>
 </div>

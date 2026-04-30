@@ -51,7 +51,7 @@
 }
 [data-palette="dark"] {
   --bg: #09090b; --surface: #18181b; --surface2: #27272a;
-  --border: #3f3f46; --text: #fafafa; --text-2: #a1a1aa; --text-3: #52525b;
+  --border: #3f3f46; --text: #d4d4d8; --text-2: #a1a1aa; --text-3: #71717a;
   --accent: #818cf8; --accent-h: #6366f1; --accent-fg: #ffffff;
   --tag-bg: rgba(129,140,248,0.12); --tag-text: #a5b4fc;
   --edited-bg: rgba(251,191,36,0.1); --edited-text: #fcd34d;
