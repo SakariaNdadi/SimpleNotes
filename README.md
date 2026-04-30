@@ -2,7 +2,7 @@
 
 A self-hosted, open-source notes app with AI search, per-note summaries, automatic task detection, and calendar integrations — built for privacy-first users who want full control over their data.
 
-**Stack:** FastAPI · HTMX · Alpine.js · SQLite (dev) · PostgreSQL + pgvector (prod) · LiteLLM · Docker
+**Stack:** FastAPI · HTMX · Alpine.js · PostgreSQL + pgvector · LiteLLM · RabbitMQ · Docker
 
 ---
 
@@ -15,6 +15,7 @@ Most notes apps either lock your data in the cloud or cost money for AI features
 ## Features
 
 ### Notes
+
 - Create, edit, and delete notes from a single-page feed
 - Infinite scroll with real-time search
 - Notes show an "Edited" badge after modification
@@ -23,19 +24,21 @@ Most notes apps either lock your data in the cloud or cost money for AI features
 - Archive notes to keep the feed clean without deleting
 
 ### Labels
+
 - Create colour-coded labels with titles and descriptions
 - Attach a label to any note
 - Filter the note feed by label
 
 ### AI (bring your own LLM)
-- **Semantic search** — query your notes with natural language; uses pgvector embeddings in production and keyword fallback in dev
+
+- **Semantic search** — query your notes with natural language; uses pgvector embeddings (PostgreSQL) with keyword fallback when no embedding model is configured
 - **Per-note summaries** — generate and cache an AI summary for any note with one click; delete the cache to regenerate
 - **Automatic task detection** — the app analyses note content with spaCy NLP and an LLM call to surface tasks buried in your notes as discovered items
 
 Configure any LLM provider in Settings → AI / LLM:
 
 | Provider | Notes |
-|----------|-------|
+| -------- | ----- |
 | OpenAI (`gpt-4o`, etc.) | Cloud, paid |
 | Anthropic (`claude-sonnet-4-6`, etc.) | Cloud, paid |
 | Google Gemini | Cloud, free tier available |
@@ -45,6 +48,7 @@ Configure any LLM provider in Settings → AI / LLM:
 API keys are encrypted at rest with Fernet symmetric encryption and never exposed in the UI after saving. See [docs/llm-config.md](docs/llm-config.md) for full setup.
 
 ### Tasks
+
 - Create tasks manually from the sidebar panel
 - Tasks discovered from note content appear as a separate "discovered" list for review
 - Confirm a discovered task to promote it to your active list, or dismiss it
@@ -52,11 +56,13 @@ API keys are encrypted at rest with Fernet symmetric encryption and never expose
 - Tasks sync bidirectionally with Google Tasks and Microsoft To Do (via OAuth)
 
 ### Calendar Integrations
+
 - Connect Google Calendar and Google Tasks via OAuth
 - Connect Microsoft Calendar and Microsoft To Do via OAuth
 - Integrations surface in Settings → Integrations; disconnect any time
 
 ### Auth
+
 - Register with email and password
 - Email verification (link printed to console in dev; real SMTP in prod)
 - Login with remember-me JWT cookie (7-day default, configurable)
@@ -65,7 +71,8 @@ API keys are encrypted at rest with Fernet symmetric encryption and never expose
 - Changing email re-triggers verification
 
 ### Privacy & Self-Hosting
-- All data lives in your database — SQLite locally, PostgreSQL in production
+
+- All data lives in your database — PostgreSQL with pgvector
 - No external analytics, no tracking, no phone-home
 - Bring your own domain and TLS
 - LLM calls go directly from your server to your chosen provider — no intermediary
@@ -74,37 +81,29 @@ API keys are encrypted at rest with Fernet symmetric encryption and never expose
 
 ## Quick Start (Dev)
 
+Requires Docker and Docker Compose.
+
 ```bash
 # 1. Clone
 git clone https://github.com/SakariaNdadi/notes.git && cd notes
 
 # 2. Configure environment
 cp .env.example .env
+# Set a strong SECRET_KEY (32+ chars) in .env
 
-# 3. Set a strong SECRET_KEY in .env (used to sign JWT tokens)
-
-# 4. Install dependencies
-uv sync
-
-# 5. Start the server
-uv run uvicorn main:app --reload
+# 3. Start the full dev stack
+docker compose -f docker/docker-compose.dev.yml up -d
 ```
 
 Open [http://localhost:8000](http://localhost:8000), register, and click the verification link printed to your terminal.
 
-## Docker (Dev)
-
-```bash
-cd docker
-docker compose up
-```
+The dev stack includes PostgreSQL + pgvector, Meilisearch, RabbitMQ, the app server, and a background worker — all wired together automatically.
 
 ## Docker (Production)
 
 ```bash
 cp .env.example .env   # fill in all values — see docs/env.md
-cd docker
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker/docker-compose.prod.yml up -d
 ```
 
 Production stack includes PostgreSQL + pgvector, nginx reverse proxy, and pgAdmin. See [docs/setup.md](docs/setup.md) for TLS configuration and full production checklist.
@@ -114,7 +113,7 @@ Production stack includes PostgreSQL + pgvector, nginx reverse proxy, and pgAdmi
 ## Documentation
 
 | Document | Description |
-|----------|-------------|
+| -------- | ----------- |
 | [docs/setup.md](docs/setup.md) | Full installation and configuration guide |
 | [docs/env.md](docs/env.md) | All environment variables with defaults |
 | [docs/llm-config.md](docs/llm-config.md) | LLM setup — Ollama, OpenAI, Anthropic, custom endpoints |
@@ -125,10 +124,10 @@ Production stack includes PostgreSQL + pgvector, nginx reverse proxy, and pgAdmi
 
 ## Dev vs Prod
 
-| Feature | Dev (SQLite) | Prod (PostgreSQL) |
-|---------|-------------|-------------------|
-| Database | SQLite file | PostgreSQL + pgvector |
-| AI search | Keyword (LIKE) | Semantic (pgvector embeddings) |
+| Feature | Dev | Prod |
+| ------- | --- | ---- |
+| Database | PostgreSQL + pgvector (docker-compose.dev.yml) | PostgreSQL + pgvector |
+| AI search | Semantic if `EMBEDDING_MODEL` set, else keyword | Semantic (pgvector embeddings) |
 | Password reset | Link in console | Real SMTP required |
 | Email verification | Link in console | Real SMTP required |
 | OAuth integrations | Requires real credentials | Requires real credentials |
