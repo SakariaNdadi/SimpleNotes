@@ -73,18 +73,29 @@ def hash_token(raw: str) -> str:
 
 @lru_cache(maxsize=1)
 def _get_fernet() -> Fernet:
-    settings = get_settings()
-    key = settings.FERNET_KEY
-    if not key:
-        key = Fernet.generate_key().decode()
+    from sqlalchemy.exc import IntegrityError, OperationalError
+
+    from app.database import SessionLocal
+    from app.models import AppSecret
+
+    db = SessionLocal()
     try:
-        return Fernet(key.encode() if isinstance(key, str) else key)
-    except (ValueError, Exception) as exc:
-        raise ValueError(
-            "FERNET_KEY in .env is invalid. "
-            "Generate one with: "
-            'python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
-        ) from exc
+        secret = db.query(AppSecret).filter(AppSecret.key == "fernet_key").first()
+        if secret:
+            return Fernet(secret.value.encode())
+        raw_key = Fernet.generate_key().decode()
+        db.add(AppSecret(key="fernet_key", value=raw_key))
+        db.commit()
+        return Fernet(raw_key.encode())
+    except IntegrityError:
+        db.rollback()
+        secret = db.query(AppSecret).filter(AppSecret.key == "fernet_key").first()
+        return Fernet(secret.value.encode())  # type: ignore[union-attr]
+    except OperationalError:
+        # Table not yet created (unit test context) — ephemeral key, cached for process lifetime
+        return Fernet(Fernet.generate_key())
+    finally:
+        db.close()
 
 
 def encrypt_value(value: str) -> str:

@@ -24,7 +24,7 @@
                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
-                    {{ entry.saved_at.strftime('%b %d, %Y · %H:%M') }}
+                    {{ (entry.saved_at | local_dt(user_tz)).strftime('%b %d, %Y · %H:%M') }}
                 </button>
                 <button hx-post="/notes/{{ note_id }}/history/{{ entry.id }}/restore" hx-target="#note-{{ note_id }}"
                     hx-swap="outerHTML" hx-confirm="Restore this version? Current content will be saved to history."

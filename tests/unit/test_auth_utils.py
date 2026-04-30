@@ -9,7 +9,6 @@ import os
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("SECRET_KEY", "unit-test-secret-key-32-chars-ok!")
-os.environ.setdefault("FERNET_KEY", "")
 
 from datetime import datetime, timedelta, timezone
 

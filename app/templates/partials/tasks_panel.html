@@ -24,7 +24,7 @@
           hx-post="/tasks/{{ task.id }}/confirm"
           hx-target="#disc-task-{{ task.id }}"
           hx-swap="outerHTML"
-          hx-on::after-request="htmx.trigger(document.body, 'taskCountChanged')"
+          hx-on::after-request="if($event.detail.successful){ document.querySelector('.empty-tasks-msg')?.remove() }"
           class="text-[11px] btn-premium px-3 py-1.5 rounded-lg shadow-sm">
           ✓ Add Task
         </button>
@@ -81,7 +81,7 @@
     <form hx-post="/tasks"
           hx-target="#created-tasks-list"
           hx-swap="afterbegin"
-          @htmx:after-request="if($event.detail.successful){ $el.reset(); newTaskOpen = false; htmx.trigger(document.body, 'taskCountChanged') }"
+          @htmx:after-request="if($event.detail.successful){ $el.reset(); newTaskOpen = false; htmx.trigger(document.body, 'taskCountChanged'); document.querySelector('.empty-tasks-msg')?.remove() }"
           class="space-y-4">
       <div class="space-y-1">
         <label class="text-[10px] font-bold text-muted uppercase px-1">Title</label>
@@ -142,17 +142,17 @@
     {% endfor %}
   </div>
 
-  {% if not tasks %}
-  <p class="text-[12px] text-muted py-4 text-center" id="created-tasks-list">
-    {% if active_filter != 'all' %}No {{ active_filter }} tasks.{% else %}No tasks yet.{% endif %}
-  </p>
-  {% else %}
-  <div class="space-y-1" id="created-tasks-list">
+  <div class="space-y-3" id="created-tasks-list">
+    {% if not tasks %}
+    <p class="text-[12px] text-muted py-4 text-center empty-tasks-msg">
+      {% if active_filter != 'all' %}No {{ active_filter }} tasks.{% else %}No tasks yet.{% endif %}
+    </p>
+    {% else %}
     {% for task in tasks %}
     {% include "partials/task_card.html" %}
     {% endfor %}
+    {% endif %}
   </div>
-  {% endif %}
 </div>
 
 <!-- ── Done Tasks ─────────────────────────────────────────── -->
@@ -169,7 +169,7 @@
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
     </svg>
   </button>
-  <div x-show="open" class="space-y-1">
+  <div x-show="open" class="space-y-3">
     {% for task in done %}
     <div class="task-card-premium opacity-60 hover:opacity-100 transition-opacity group relative"
          id="task-{{ task.id }}">

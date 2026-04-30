@@ -9,6 +9,8 @@
     (function(){
       var p = localStorage.getItem('notes-palette') || 'default';
       document.documentElement.setAttribute('data-palette', p);
+      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz) document.cookie = 'tz=' + tz + ';path=/;max-age=31536000;SameSite=Lax';
     })();
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">

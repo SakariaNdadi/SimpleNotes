@@ -3,15 +3,12 @@ from fastapi.responses import HTMLResponse
 from app.templates_config import templates
 from sqlalchemy.orm import Session
 
-from app.search.hybrid import embed_and_index
-
 from app.auth.router import require_user
 from app.database import get_db
+from app.jobs.broker import enqueue
 from app.labels.service import get_labels
-from app.models import CalendarToken, NoteHistory, User
+from app.models import CalendarToken, NoteHistory, User, UserLLMConfig
 from app.notes import service
-from app.notes.nlp_extractor import extract_tasks
-from app.notes.task_service import save_tasks
 from app.notes.summary_service import delete_summary
 from app.preferences.service import get_or_create_prefs
 
@@ -48,7 +45,6 @@ async def list_notes(
 @router.post("", response_class=HTMLResponse)
 async def create_note(
     request: Request,
-    background_tasks: BackgroundTasks,
     description: str = Form(...),
     label_id: str = Form(""),
     start_datetime: str = Form(""),
@@ -70,8 +66,19 @@ async def create_note(
         end_datetime=end_datetime or None,
         is_all_day=bool(is_all_day),
     )
-    background_tasks.add_task(embed_and_index, note.id, user.id, note.description)
-    discovered = _nlp_discover(db, user.id, note.id, note.description)
+    await enqueue(
+        "embed_and_index",
+        {"note_id": note.id, "user_id": user.id, "description": note.description},
+    )
+    await enqueue(
+        "nlp_discover",
+        {"note_id": note.id, "user_id": user.id, "text": note.description},
+    )
+    if _has_active_llm(db, user.id):
+        await enqueue(
+            "ai_detect_tasks",
+            {"note_id": note.id, "user_id": user.id, "note_text": note.description},
+        )
     labels = get_labels(db, user.id)
     providers = _connected_providers(db, user.id)
     return templates.TemplateResponse(
@@ -80,7 +87,7 @@ async def create_note(
         {
             "note": note,
             "labels": labels,
-            "discovered_tasks": discovered,
+            "discovered_tasks": [],
             "providers": providers,
         },
         headers={"HX-Trigger": "noteCreated"},
@@ -203,7 +210,6 @@ async def note_history(
 async def update_note(
     request: Request,
     note_id: str,
-    background_tasks: BackgroundTasks,
     description: str = Form(...),
     label_id: str = Form(""),
     start_datetime: str = Form(""),
@@ -231,8 +237,19 @@ async def update_note(
         is_all_day=bool(is_all_day),
     )
     delete_summary(db, note.id, user.id)
-    background_tasks.add_task(embed_and_index, note.id, user.id, note.description)
-    discovered = _nlp_discover(db, user.id, note.id, note.description)
+    await enqueue(
+        "embed_and_index",
+        {"note_id": note.id, "user_id": user.id, "description": note.description},
+    )
+    await enqueue(
+        "nlp_discover",
+        {"note_id": note.id, "user_id": user.id, "text": note.description},
+    )
+    if _has_active_llm(db, user.id):
+        await enqueue(
+            "ai_detect_tasks",
+            {"note_id": note.id, "user_id": user.id, "note_text": note.description},
+        )
     labels = get_labels(db, user.id)
     providers = _connected_providers(db, user.id)
     return templates.TemplateResponse(
@@ -241,7 +258,7 @@ async def update_note(
         {
             "note": note,
             "labels": labels,
-            "discovered_tasks": discovered,
+            "discovered_tasks": [],
             "providers": providers,
         },
     )
@@ -305,7 +322,6 @@ async def restore_from_history(
     request: Request,
     note_id: str,
     history_id: str,
-    background_tasks: BackgroundTasks,
     user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
@@ -325,7 +341,10 @@ async def restore_from_history(
     note = service.update_note(
         db, note, entry.description, entry.label_id, max_history=prefs.max_edit_history
     )
-    background_tasks.add_task(embed_and_index, note.id, user.id, note.description)
+    await enqueue(
+        "embed_and_index",
+        {"note_id": note.id, "user_id": user.id, "description": note.description},
+    )
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
         request,
@@ -341,13 +360,10 @@ def _connected_providers(db, user_id: str) -> list[str]:
     ]
 
 
-def _nlp_discover(db, user_id: str, note_id: str, text: str) -> list:
-    try:
-        tasks = extract_tasks(text)
-        if tasks:
-            return save_tasks(
-                db, user_id, note_id, tasks, source="nlp", status="discovered"
-            )
-    except Exception:
-        pass
-    return []
+def _has_active_llm(db, user_id: str) -> bool:
+    return (
+        db.query(UserLLMConfig)
+        .filter(UserLLMConfig.user_id == user_id, UserLLMConfig.is_active.is_(True))
+        .first()
+        is not None
+    )
