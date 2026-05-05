@@ -10,7 +10,7 @@ from app.labels.service import get_labels
 from app.models import CalendarToken, NoteHistory, User, UserLLMConfig
 from app.notes import service
 from app.notes.summary_service import delete_summary
-from app.preferences.service import get_or_create_prefs
+from app.preferences.service import get_languages, get_or_create_prefs
 
 router = APIRouter(prefix="/notes")
 
@@ -102,8 +102,35 @@ async def search_notes_local(
     db: Session = Depends(get_db),
 ):
     from app.labels.service import get_labels
+    from app.models import Note
+    from app.search.meili import search as meili_search
 
-    results = service.search_notes(db, user.id, query.strip()) if query.strip() else []
+    stripped = query.strip()
+    if not stripped:
+        results = []
+    else:
+        prefs = get_or_create_prefs(db, user.id)
+        langs = get_languages(prefs)
+        import asyncio
+
+        meili_ids = await asyncio.to_thread(
+            meili_search, stripped, str(user.id), 50, langs
+        )
+        if meili_ids:
+            notes_by_id = {
+                n.id: n
+                for n in db.query(Note)
+                .filter(
+                    Note.id.in_(meili_ids),
+                    Note.user_id == user.id,
+                    Note.is_deleted == False,  # noqa: E712
+                    Note.is_archived == False,  # noqa: E712
+                )
+                .all()
+            }
+            results = [notes_by_id[nid] for nid in meili_ids if nid in notes_by_id]
+        else:
+            results = service.search_notes(db, user.id, stripped)
     labels = get_labels(db, user.id)
     return templates.TemplateResponse(
         request,

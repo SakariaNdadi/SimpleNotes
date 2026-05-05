@@ -270,7 +270,7 @@ async def ai_search(
         .all()
     )
 
-    hybrid_results = await hybrid_search(db, user.id, query)
+    hybrid_results = await hybrid_search(db, user.id, query, locales=langs)
     candidates = hybrid_results if hybrid_results else all_notes
 
     today = date.today()
