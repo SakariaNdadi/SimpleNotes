@@ -13,18 +13,21 @@ SCOPES = ["Calendars.ReadWrite", "Tasks.ReadWrite", "offline_access"]
 REDIRECT_URI_PATH = "/integrations/microsoft/callback"
 
 
-def _get_app() -> msal.ConfidentialClientApplication:
-    s = get_settings()
+def _get_app(
+    client_id: str, client_secret: str, tenant_id: str
+) -> msal.ConfidentialClientApplication:
     return msal.ConfidentialClientApplication(
-        s.MICROSOFT_CLIENT_ID,
-        authority=f"https://login.microsoftonline.com/{s.MICROSOFT_TENANT_ID}",
-        client_credential=s.MICROSOFT_CLIENT_SECRET,
+        client_id,
+        authority=f"https://login.microsoftonline.com/{tenant_id}",
+        client_credential=client_secret,
     )
 
 
-def get_auth_url(state: str) -> str:
+def get_auth_url(
+    state: str, client_id: str, client_secret: str, tenant_id: str = "common"
+) -> str:
     s = get_settings()
-    app = _get_app()
+    app = _get_app(client_id, client_secret, tenant_id)
     return app.get_authorization_request_url(
         scopes=SCOPES,
         state=state,
@@ -32,9 +35,11 @@ def get_auth_url(state: str) -> str:
     )
 
 
-def exchange_code(code: str) -> dict:
+def exchange_code(
+    code: str, client_id: str, client_secret: str, tenant_id: str = "common"
+) -> dict:
     s = get_settings()
-    app = _get_app()
+    app = _get_app(client_id, client_secret, tenant_id)
     result = app.acquire_token_by_authorization_code(
         code,
         scopes=SCOPES,

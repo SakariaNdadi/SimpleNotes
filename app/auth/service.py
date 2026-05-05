@@ -10,7 +10,7 @@ from app.auth.utils import (
     verify_password,
 )
 from app.config import get_settings
-from app.models import EmailVerificationToken, PasswordResetToken, User
+from app.models import EmailVerificationToken, PasswordResetToken, SiteConfig, User
 
 
 def get_user_by_username(db: Session, username: str) -> User | None:
@@ -26,11 +26,19 @@ def get_user_by_id(db: Session, user_id: str) -> User | None:
 
 
 def create_user(db: Session, username: str, email: str, password: str) -> User:
+    is_first_user = db.query(User).count() == 0
+
+    if not is_first_user:
+        site_config = db.query(SiteConfig).filter(SiteConfig.id == 1).first()
+        if site_config and not site_config.registration_open:
+            raise ValueError("registration_closed")
+
     user = User(
         username=username,
         email=email,
         hashed_password=hash_password(password),
         is_verified=True,
+        is_admin=is_first_user,
     )
     db.add(user)
     db.commit()
