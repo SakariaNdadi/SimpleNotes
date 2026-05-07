@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, Request, Response
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from app.templates_config import templates
 from sqlalchemy.orm import Session
@@ -22,15 +22,39 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     user_id = decode_access_token(token)
     if not user_id:
         return None
-    return service.get_user_by_id(db, user_id)
+    user = service.get_user_by_id(db, user_id)
+    if not user or not user.is_active:
+        return None
+
+    if user.is_admin:
+        impersonated_id = request.cookies.get("impersonating_user_id")
+        if impersonated_id:
+            target = service.get_user_by_id(db, impersonated_id)
+            if target:
+                return target
+
+    return user
 
 
 def require_user(request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
     if not user:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=401, detail="Not authenticated")
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account deactivated")
+    return user
+
+
+def require_admin(request: Request, db: Session = Depends(get_db)):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = decode_access_token(token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user = service.get_user_by_id(db, user_id)
+    if not user or not user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
     return user
 
 
@@ -73,7 +97,17 @@ async def register(
             status_code=422,
         )
 
-    service.create_user(db, username, email, password)
+    try:
+        service.create_user(db, username, email, password)
+    except ValueError as exc:
+        if str(exc) == "registration_closed":
+            return templates.TemplateResponse(
+                request,
+                "register.html",
+                {"errors": {"general": "Registration is currently closed."}},
+                status_code=403,
+            )
+        raise
     return templates.TemplateResponse(
         request,
         "register.html",
@@ -83,7 +117,12 @@ async def register(
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse(request, "login.html")
+    context = {}
+    if request.query_params.get("deactivated"):
+        context["error"] = (
+            "Your account has been deactivated. Contact the administrator."
+        )
+    return templates.TemplateResponse(request, "login.html", context)
 
 
 @router.post("/login", response_class=HTMLResponse)

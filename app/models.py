@@ -37,6 +37,8 @@ class User(Base):
     )
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     notes: Mapped[list[Note]] = relationship(
@@ -246,3 +248,34 @@ class NoteHistory(Base):
     saved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     note: Mapped[Note] = relationship("Note", back_populates="history")
+
+
+class SiteConfig(Base):
+    __tablename__ = "site_config"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    registration_open: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
+
+
+class OAuthCredential(Base):
+    __tablename__ = "oauth_credentials"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    provider: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
+    client_id: Mapped[str] = mapped_column(Text, nullable=False)
+    client_secret_encrypted: Mapped[str] = mapped_column(Text, nullable=False)
+    tenant_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+
+class ImpersonationAudit(Base):
+    __tablename__ = "impersonation_audit"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    admin_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    target_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    ended_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )

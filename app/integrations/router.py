@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
+from app.admin.service import get_integration_creds
 from app.auth.router import require_user
 from app.auth.utils import encrypt_value
 from app.database import get_db
@@ -43,13 +44,20 @@ def _get_or_create_token(
 
 
 @router.get("/google/oauth")
-async def google_oauth_start(request: Request, user: User = Depends(require_user)):
+async def google_oauth_start(
+    request: Request,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
     from app.integrations.google import get_auth_url
 
+    creds = get_integration_creds(db, "google")
     state = secrets.token_urlsafe(16)
     request.session["oauth_state"] = state
     request.session["oauth_user_id"] = user.id
-    return RedirectResponse(get_auth_url(state))
+    return RedirectResponse(
+        get_auth_url(state, creds["client_id"], creds["client_secret"])
+    )
 
 
 @router.get("/google/callback")
@@ -63,7 +71,8 @@ async def google_oauth_callback(
 
     if not code:
         return RedirectResponse("/?error=google_oauth_failed")
-    token_data = exchange_code(code)
+    creds = get_integration_creds(db, "google")
+    token_data = exchange_code(code, creds["client_id"], creds["client_secret"])
     user_id = request.session.get("oauth_user_id")
     _get_or_create_token(db, user_id, "google", token_data)
     return RedirectResponse("/?connected=google")
@@ -73,13 +82,25 @@ async def google_oauth_callback(
 
 
 @router.get("/microsoft/oauth")
-async def microsoft_oauth_start(request: Request, user: User = Depends(require_user)):
+async def microsoft_oauth_start(
+    request: Request,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
     from app.integrations.microsoft import get_auth_url
 
+    creds = get_integration_creds(db, "microsoft")
     state = secrets.token_urlsafe(16)
     request.session["oauth_state"] = state
     request.session["oauth_user_id"] = user.id
-    return RedirectResponse(get_auth_url(state))
+    return RedirectResponse(
+        get_auth_url(
+            state,
+            creds["client_id"],
+            creds["client_secret"],
+            creds.get("tenant_id") or "common",
+        )
+    )
 
 
 @router.get("/microsoft/callback")
@@ -93,7 +114,13 @@ async def microsoft_oauth_callback(
 
     if not code:
         return RedirectResponse("/?error=microsoft_oauth_failed")
-    token_data = exchange_code(code)
+    creds = get_integration_creds(db, "microsoft")
+    token_data = exchange_code(
+        code,
+        creds["client_id"],
+        creds["client_secret"],
+        creds.get("tenant_id") or "common",
+    )
     user_id = request.session.get("oauth_user_id")
     _get_or_create_token(db, user_id, "microsoft", token_data)
     return RedirectResponse("/?connected=microsoft")
@@ -137,12 +164,27 @@ async def create_task(
                 create_task as g_task,
             )
 
+            google_creds = get_integration_creds(db, "google")
             if task_type == "event":
                 create_calendar_event(
-                    token, title, description, dt or None, end_dt or None, all_day
+                    token,
+                    title,
+                    description,
+                    dt or None,
+                    end_dt or None,
+                    all_day,
+                    client_id=google_creds["client_id"],
+                    client_secret=google_creds["client_secret"],
                 )
             else:
-                g_task(token, title, description, dt or None)
+                g_task(
+                    token,
+                    title,
+                    description,
+                    dt or None,
+                    client_id=google_creds["client_id"],
+                    client_secret=google_creds["client_secret"],
+                )
         elif provider == "microsoft":
             from app.integrations.microsoft import (
                 create_calendar_event as ms_event,

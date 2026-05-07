@@ -1,0 +1,122 @@
+{% extends "admin/layout.html" %}
+{% block admin_title %}Users{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold text-primary">Users <span class="text-lg font-normal text-muted">({{ total }})</span></h1>
+  <form method="get" action="/admin/users" class="flex gap-2">
+    <input type="text" name="search" value="{{ search }}" placeholder="Search username or email…"
+           class="input-base px-3 py-2 rounded-xl border text-sm w-64" />
+    <button type="submit" class="btn-accent px-4 py-2 rounded-xl text-sm font-semibold">Search</button>
+    {% if search %}
+    <a href="/admin/users" class="bg-surface border border-base text-secondary px-4 py-2 rounded-xl text-sm font-semibold hover:bg-base">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<div x-data="{ selected: [], allChecked: false }">
+  <!-- Bulk action bar -->
+  <div x-show="selected.length > 0" x-cloak
+       class="flex items-center gap-3 mb-3 px-4 py-2.5 bg-[color:var(--accent)]/10 border border-[color:var(--accent)]/30 rounded-xl">
+    <span class="text-sm font-medium text-primary" x-text="selected.length + ' selected'"></span>
+    <form method="post" action="/admin/users/bulk-action" class="flex gap-2 ml-auto"
+          @submit.prevent="
+            const form = $event.target;
+            selected.forEach(id => {
+              const inp = document.createElement('input');
+              inp.type = 'hidden'; inp.name = 'user_ids'; inp.value = id;
+              form.appendChild(inp);
+            });
+            form.submit();
+          ">
+      <input type="hidden" name="action" value="deactivate" x-ref="actionInput" />
+      <button type="submit"
+              @click="$refs.actionInput.value = 'deactivate'"
+              class="bg-yellow-50 border border-yellow-300 text-yellow-800 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-yellow-100 transition-colors">
+        Deactivate selected
+      </button>
+      <button type="submit"
+              @click="$refs.actionInput.value = 'delete';
+                      if (!confirm('Permanently delete ' + selected.length + ' user(s)? This cannot be undone.')) $event.preventDefault()"
+              class="bg-red-50 border border-red-300 text-red-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors">
+        Delete selected
+      </button>
+    </form>
+    <button @click="selected = []; allChecked = false"
+            class="text-xs text-muted hover:text-secondary ml-1">Clear</button>
+  </div>
+
+  <div class="bg-surface border border-base rounded-2xl overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-base bg-base">
+          <th class="w-10 px-4 py-3">
+            <input type="checkbox" class="w-4 h-4 rounded accent-[color:var(--accent)]"
+                   @change="allChecked = $event.target.checked;
+                            selected = allChecked
+                              ? [...document.querySelectorAll('.row-check')].map(el => el.value)
+                              : []" />
+          </th>
+          <th class="text-left px-4 py-3 font-semibold text-secondary">Username</th>
+          <th class="text-left px-4 py-3 font-semibold text-secondary">Email</th>
+          <th class="text-left px-4 py-3 font-semibold text-secondary">Notes</th>
+          <th class="text-left px-4 py-3 font-semibold text-secondary">Status</th>
+          <th class="text-left px-4 py-3 font-semibold text-secondary">Joined</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-base">
+        {% for user in users %}
+        <tr class="hover:bg-base transition-colors" :class="selected.includes('{{ user.id }}') ? 'bg-base' : ''">
+          <td class="px-4 py-3">
+            <input type="checkbox" value="{{ user.id }}"
+                   class="row-check w-4 h-4 rounded accent-[color:var(--accent)]"
+                   :checked="selected.includes('{{ user.id }}')"
+                   @change="
+                     if ($event.target.checked) { selected.push('{{ user.id }}') }
+                     else { selected = selected.filter(id => id !== '{{ user.id }}'); allChecked = false }
+                   " />
+          </td>
+          <td class="px-4 py-3 font-medium text-primary">
+            {{ user.username }}
+            {% if user.is_admin %}<span class="ml-1.5 text-xs bg-[color:var(--accent)] text-white px-1.5 py-0.5 rounded">admin</span>{% endif %}
+          </td>
+          <td class="px-4 py-3 text-secondary">{{ user.email }}</td>
+          <td class="px-4 py-3 text-secondary">{{ user.note_count }}</td>
+          <td class="px-4 py-3">
+            {% if user.is_active %}
+            <span class="text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">Active</span>
+            {% else %}
+            <span class="text-xs font-medium text-red-700 bg-red-100 px-2 py-0.5 rounded-full">Deactivated</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-secondary">{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+          <td class="px-4 py-3 text-right">
+            <a href="/admin/users/{{ user.id }}" class="text-xs text-accent hover:underline font-medium">View</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="px-4 py-8 text-center text-muted text-sm">No users found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if total_pages > 1 %}
+  <div class="flex items-center justify-between mt-4">
+    <p class="text-sm text-muted">Page {{ page }} of {{ total_pages }}</p>
+    <div class="flex gap-2">
+      {% if page > 1 %}
+      <a href="/admin/users?page={{ page - 1 }}&search={{ search }}"
+         class="bg-surface border border-base text-secondary px-3 py-1.5 rounded-lg text-sm hover:bg-base">Previous</a>
+      {% endif %}
+      {% if page < total_pages %}
+      <a href="/admin/users?page={{ page + 1 }}&search={{ search }}"
+         class="bg-surface border border-base text-secondary px-3 py-1.5 rounded-lg text-sm hover:bg-base">Next</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

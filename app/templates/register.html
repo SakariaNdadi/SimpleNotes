@@ -17,6 +17,8 @@
     <div class="bg-surface rounded-2xl border border-base p-6 shadow-sm">
       {% if success %}
       <div class="bg-success rounded-lg px-4 py-3 text-sm">{{ success }}</div>
+      {% elif errors and errors.general %}
+      <div class="bg-error rounded-lg px-4 py-3 text-sm">{{ errors.general }}</div>
       {% else %}
       <form method="post" action="/register" class="space-y-4">
         <div>

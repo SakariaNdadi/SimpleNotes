@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
+from app.admin.router import router as admin_router
 from app.ai.router import router as ai_router
 from app.auth.profile_router import router as profile_router
 from app.auth.router import get_current_user, router as auth_router
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
     except Exception:
         pass
     _setup_search()
+    _setup_admin()
     await broker_connect()
     yield
     await broker_disconnect()
@@ -45,6 +47,7 @@ app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+app.include_router(admin_router)
 app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(notes_router)
@@ -90,6 +93,40 @@ def _setup_search() -> None:
         pass
 
 
+def _setup_admin() -> None:
+    from app.database import SessionLocal
+    from app.admin.service import seed_site_config
+
+    if settings.is_postgres:
+        from sqlalchemy import text
+        from app.database import engine
+
+        try:
+            with engine.connect() as conn:
+                conn.execute(
+                    text(
+                        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE"
+                    )
+                )
+                conn.execute(
+                    text(
+                        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE"
+                    )
+                )
+                conn.commit()
+        except Exception:
+            pass
+
+    try:
+        db = SessionLocal()
+        try:
+            seed_site_config(db)
+        finally:
+            db.close()
+    except Exception:
+        pass
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
@@ -101,8 +138,14 @@ async def index(request: Request, db: Session = Depends(get_db)):
 
     labels = get_labels(db, user.id)
     prefs = get_or_create_prefs(db, user.id)
+    impersonating = bool(request.cookies.get("impersonating_user_id"))
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"user": user, "labels": labels, "prefs": prefs},
+        {
+            "user": user,
+            "labels": labels,
+            "prefs": prefs,
+            "impersonating": impersonating,
+        },
     )

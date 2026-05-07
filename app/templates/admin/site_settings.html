@@ -1,0 +1,71 @@
+{% extends "admin/layout.html" %}
+{% block admin_title %}Site Settings{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-primary mb-6">Site Settings</h1>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <!-- Configurable settings -->
+  <div class="bg-surface border border-base rounded-2xl p-6">
+    <h2 class="text-base font-semibold text-primary mb-4">Registration</h2>
+    <form method="post" action="/admin/settings">
+      <label class="flex items-center gap-3 cursor-pointer select-none">
+        <input type="checkbox" name="registration_open" value="on"
+               {% if site_config.registration_open %}checked{% endif %}
+               class="w-4 h-4 rounded accent-[color:var(--accent)]" />
+        <span class="text-sm font-medium text-primary">Allow new user registration</span>
+      </label>
+      <p class="text-xs text-muted mt-2 ml-7">When disabled, only the admin can access the app. Existing users are unaffected.</p>
+      <button type="submit" class="btn-accent mt-5 px-4 py-2 rounded-xl text-sm font-semibold">Save</button>
+    </form>
+  </div>
+
+  <!-- Environment status (read-only) -->
+  <div class="bg-surface border border-base rounded-2xl p-6">
+    <h2 class="text-base font-semibold text-primary mb-4">Environment Status</h2>
+    <dl class="space-y-3 text-sm">
+      <div class="flex justify-between items-center">
+        <dt class="text-secondary">Database</dt>
+        <dd class="font-mono text-xs text-primary bg-base px-2 py-1 rounded">{{ env_status.database_url }}</dd>
+      </div>
+      <div class="flex justify-between items-center">
+        <dt class="text-secondary">App URL</dt>
+        <dd class="text-primary">{{ env_status.app_base_url }}</dd>
+      </div>
+      <div class="flex justify-between items-center">
+        <dt class="text-secondary">SMTP</dt>
+        <dd>{% if env_status.smtp_configured %}<span class="text-green-700 font-medium">Configured</span>{% else %}<span class="text-muted">Not set</span>{% endif %}</dd>
+      </div>
+      <div class="flex justify-between items-center">
+        <dt class="text-secondary">Meilisearch</dt>
+        <dd>{% if env_status.meili_configured %}<span class="text-green-700 font-medium">Configured</span>{% else %}<span class="text-muted">Not set</span>{% endif %}</dd>
+      </div>
+      <div class="flex justify-between items-center">
+        <dt class="text-secondary">RabbitMQ</dt>
+        <dd>{% if env_status.rabbitmq_configured %}<span class="text-green-700 font-medium">Configured</span>{% else %}<span class="text-muted">Not set (asyncio fallback)</span>{% endif %}</dd>
+      </div>
+      <div class="flex justify-between items-center">
+        <dt class="text-secondary">Embedding model</dt>
+        <dd class="text-primary">{{ env_status.embedding_model }}</dd>
+      </div>
+      <div class="flex justify-between items-center">
+        <dt class="text-secondary">Google OAuth</dt>
+        <dd>
+          {% if env_status.google_configured %}
+            <span class="text-green-700 font-medium">Configured</span>
+            {% if env_status.google_from_db %}<span class="text-xs text-muted ml-1">(DB)</span>{% else %}<span class="text-xs text-muted ml-1">(.env)</span>{% endif %}
+          {% else %}<span class="text-muted">Not set</span>{% endif %}
+        </dd>
+      </div>
+      <div class="flex justify-between items-center">
+        <dt class="text-secondary">Microsoft OAuth</dt>
+        <dd>
+          {% if env_status.microsoft_configured %}
+            <span class="text-green-700 font-medium">Configured</span>
+            {% if env_status.microsoft_from_db %}<span class="text-xs text-muted ml-1">(DB)</span>{% else %}<span class="text-xs text-muted ml-1">(.env)</span>{% endif %}
+          {% else %}<span class="text-muted">Not set</span>{% endif %}
+        </dd>
+      </div>
+    </dl>
+  </div>
+</div>
+{% endblock %}

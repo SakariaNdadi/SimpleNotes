@@ -5,6 +5,7 @@ import meilisearch
 from app.config import get_settings
 
 _INDEX = "notes"
+_SUPPORTED_LOCALES = ["en", "fr", "es", "de", "ar", "zh", "pt", "it", "ja", "ko"]
 _client_instance: meilisearch.Client | None = None
 
 
@@ -24,8 +25,25 @@ def setup_index() -> None:
         return
     try:
         client.create_index(_INDEX, {"primaryKey": "id"})
-        client.index(_INDEX).update_filterable_attributes(["user_id"])
-        client.index(_INDEX).update_searchable_attributes(["description"])
+        client.index(_INDEX).update_settings(
+            {
+                "filterableAttributes": ["user_id"],
+                "searchableAttributes": ["description"],
+                "typoTolerance": {
+                    "enabled": True,
+                    "minWordSizeForTypos": {
+                        "oneTypo": 4,
+                        "twoTypos": 7,
+                    },
+                },
+                "localizedAttributes": [
+                    {
+                        "locales": _SUPPORTED_LOCALES,
+                        "attributePatterns": ["description"],
+                    }
+                ],
+            }
+        )
     except Exception:
         pass
 
@@ -58,18 +76,20 @@ def delete_note(note_id: str) -> None:
         pass
 
 
-def search(query: str, user_id: str, limit: int = 50) -> list[str]:
+def search(
+    query: str, user_id: str, limit: int = 50, locales: list[str] | None = None
+) -> list[str]:
     client = _get_client()
     if not client:
         return []
     try:
-        result = client.index(_INDEX).search(
-            query,
-            {
-                "filter": f'user_id = "{user_id}"',
-                "limit": limit,
-            },
-        )
+        params: dict = {
+            "filter": f'user_id = "{user_id}"',
+            "limit": limit,
+        }
+        if locales:
+            params["locales"] = locales
+        result = client.index(_INDEX).search(query, params)
         return [hit["id"] for hit in result["hits"]]
     except Exception:
         return []
