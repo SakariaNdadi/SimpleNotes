@@ -18,46 +18,35 @@ SCOPES = [
 REDIRECT_URI_PATH = "/integrations/google/callback"
 
 
-def get_auth_url(state: str) -> str:
+def _flow(client_id: str, client_secret: str):
     from google_auth_oauthlib.flow import Flow
 
     settings = get_settings()
-    flow = Flow.from_client_config(
+    return Flow.from_client_config(
         {
             "web": {
-                "client_id": settings.GOOGLE_CLIENT_ID,
-                "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                "client_id": client_id,
+                "client_secret": client_secret,
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": "https://oauth2.googleapis.com/token",
                 "redirect_uris": [f"{settings.APP_BASE_URL}{REDIRECT_URI_PATH}"],
             }
         },
         scopes=SCOPES,
+        redirect_uri=f"{settings.APP_BASE_URL}{REDIRECT_URI_PATH}",
     )
-    flow.redirect_uri = f"{settings.APP_BASE_URL}{REDIRECT_URI_PATH}"
+
+
+def get_auth_url(state: str, client_id: str, client_secret: str) -> str:
+    flow = _flow(client_id, client_secret)
     url, _ = flow.authorization_url(
         access_type="offline", include_granted_scopes="true", state=state
     )
     return url
 
 
-def exchange_code(code: str) -> dict:
-    from google_auth_oauthlib.flow import Flow
-
-    settings = get_settings()
-    flow = Flow.from_client_config(
-        {
-            "web": {
-                "client_id": settings.GOOGLE_CLIENT_ID,
-                "client_secret": settings.GOOGLE_CLIENT_SECRET,
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": [f"{settings.APP_BASE_URL}{REDIRECT_URI_PATH}"],
-            }
-        },
-        scopes=SCOPES,
-    )
-    flow.redirect_uri = f"{settings.APP_BASE_URL}{REDIRECT_URI_PATH}"
+def exchange_code(code: str, client_id: str, client_secret: str) -> dict:
+    flow = _flow(client_id, client_secret)
     flow.fetch_token(code=code)
     creds = flow.credentials
     return {
@@ -68,16 +57,15 @@ def exchange_code(code: str) -> dict:
     }
 
 
-def _get_creds(token: CalendarToken) -> Credentials:
-    settings = get_settings()
+def _get_creds(token: CalendarToken, client_id: str, client_secret: str) -> Credentials:
     return Credentials(
         token=decrypt_value(token.access_token_encrypted),
         refresh_token=decrypt_value(token.refresh_token_encrypted)
         if token.refresh_token_encrypted
         else None,
         token_uri="https://oauth2.googleapis.com/token",
-        client_id=settings.GOOGLE_CLIENT_ID,
-        client_secret=settings.GOOGLE_CLIENT_SECRET,
+        client_id=client_id,
+        client_secret=client_secret,
         scopes=SCOPES,
     )
 
@@ -89,10 +77,12 @@ def create_calendar_event(
     dt: str | None,
     end_dt: str | None = None,
     is_all_day: bool = False,
+    client_id: str = "",
+    client_secret: str = "",
 ) -> dict:
     from datetime import timedelta
 
-    creds = _get_creds(token)
+    creds = _get_creds(token, client_id, client_secret)
     service = build("calendar", "v3", credentials=creds)
     event = {"summary": title, "description": description}
     if is_all_day:
@@ -112,9 +102,14 @@ def create_calendar_event(
 
 
 def create_task(
-    token: CalendarToken, title: str, description: str, due: str | None
+    token: CalendarToken,
+    title: str,
+    description: str,
+    due: str | None,
+    client_id: str = "",
+    client_secret: str = "",
 ) -> dict:
-    creds = _get_creds(token)
+    creds = _get_creds(token, client_id, client_secret)
     service = build("tasks", "v1", credentials=creds)
     task = {"title": title, "notes": description}
     if due:

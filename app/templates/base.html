@@ -21,6 +21,15 @@
   <script src="/static/alpinejs.min.js" defer></script>
 </head>
 <body class="bg-app text-primary font-sans antialiased">
+  {% if impersonating %}
+  <div class="fixed top-0 inset-x-0 z-[9999] bg-red-600 text-white text-center py-1.5 text-sm font-medium flex items-center justify-center gap-3">
+    <span>Impersonating <strong>{{ user.username }}</strong></span>
+    <form method="post" action="/admin/impersonate/stop" class="inline">
+      <button type="submit" class="underline hover:no-underline text-white font-semibold">Stop impersonating</button>
+    </form>
+  </div>
+  <div class="h-9"></div>
+  {% endif %}
   {% block body %}{% endblock %}
 </body>
 </html>
