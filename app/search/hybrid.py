@@ -20,14 +20,18 @@ def _rrf_merge(ranked_lists: list[list[str]], k: int = 60) -> list[str]:
 
 
 async def hybrid_search(
-    db: Session, user_id: str, query: str, limit: int = 50
+    db: Session,
+    user_id: str,
+    query: str,
+    limit: int = 50,
+    locales: list[str] | None = None,
 ) -> list[Note]:
     from app.search.embeddings import get_embedding
     from app.search.meili import search as meili_search
 
     settings = get_settings()
 
-    meili_ids = await asyncio.to_thread(meili_search, query, user_id, limit)
+    meili_ids = await asyncio.to_thread(meili_search, query, user_id, limit, locales)
 
     if settings.is_postgres and settings.EMBEDDING_MODEL:
         from app.search.vector import similarity_search
