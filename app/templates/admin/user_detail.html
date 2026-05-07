@@ -59,6 +59,9 @@
 
   <!-- Actions -->
   <div class="space-y-3">
+    {% if user_data.id == admin.id %}
+    <p class="text-xs text-muted text-center py-2">Cannot modify your own account from here.</p>
+    {% else %}
     {% if user_data.is_active %}
     <form method="post" action="/admin/users/{{ user_data.id }}/deactivate">
       <button class="w-full bg-surface border border-base text-secondary px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-yellow-50 hover:border-yellow-300 hover:text-yellow-800 transition-colors">
@@ -104,6 +107,7 @@
         </form>
       </div>
     </div>
+    {% endif %}
     {% endif %}
   </div>
 </div>
